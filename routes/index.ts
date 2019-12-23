@@ -1,8 +1,8 @@
-import { Router } from "express";
-import stores from "./store";
+import { Router } from "express"
+import stores from "./stores"
 
-const router = Router();
+const router = Router()
 
-router.use("/stores", stores);
+router.use("/stores", stores)
 
-export default router;
+export default router
