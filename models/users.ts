@@ -3,14 +3,19 @@ type Favorites = {
   productId: string
 }
 
-type User = {
-  name: string
-  avatar: string
-  surname: string
-  gender: "male" | "female"
-  age: number
+export type tokenInfo = { _id: string }
+
+export type User = {
+  _id?: string
+  firstName?: string
+  lastName?: string
+  avatar?: string
+  gender?: 'male' | 'female'
+  age?: number
   loyaltyPoints: Record<string, number>
   favorites: Favorites[]
+  username: string
+  password: string
 }
 
 /**

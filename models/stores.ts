@@ -1,4 +1,4 @@
-type Coords = [number, number]
+export type Coords = [number, number]
 
 type Product = {
   name: string
@@ -7,6 +7,7 @@ type Product = {
 }
 
 type Store = {
+  storeId: string
   name: string
   coords: Coords
   images: string[]

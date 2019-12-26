@@ -1,11 +1,12 @@
-import * as express from "express"
-import router from "./routes"
-import { RedisClient } from "redis"
+import * as express from 'express'
+import router from './routes'
+import { RedisClient } from 'redis'
 
 export const redis = new RedisClient({})
-const PORT = process.env.PORT || 3000
+const PORT = process.env.PORT || 4000
 
 const app = express()
+app.use(express.json())
 
 app.use(router)
 
