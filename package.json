@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "tsnd --no-notify --respawn ."
+    "start": "tsnd --no-notify --respawn ./src",
+    "build": "tsc -p ."
   },
   "author": "",
   "license": "ISC",
