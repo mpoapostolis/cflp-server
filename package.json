@@ -16,6 +16,7 @@
     "@types/jsonwebtoken": "^8.3.5",
     "@types/mongodb": "^3.3.13",
     "@types/passport-local": "^1.0.33",
+    "@types/ramda": "^0.26.39",
     "@types/redis": "^2.8.14",
     "bcrypt": "^3.0.7",
     "jsonwebtoken": "^8.5.1",
@@ -28,6 +29,7 @@
     "express": "^4.17.1",
     "mongodb": "^3.4.0",
     "passport-local": "^1.0.0",
+    "ramda": "^0.26.1",
     "redis": "^2.8.0"
   }
 }

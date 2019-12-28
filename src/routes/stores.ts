@@ -53,16 +53,4 @@ stores.delete('/:id', async (req: Request, res: Response) => {
   res.json({})
 })
 
-stores.get('/id:/products', async (req: Request, res: Response) => {
-  res.json({})
-})
-
-stores.put('/id:/products', async (req: Request, res: Response) => {
-  res.json({})
-})
-
-stores.delete('/id:/products', async (req: Request, res: Response) => {
-  res.json({})
-})
-
 export default stores

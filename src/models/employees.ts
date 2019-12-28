@@ -2,6 +2,7 @@ export type tokenInfo = { _id: string }
 
 export type Employee = {
   _id?: string
+  storeId: string
   username: string
   password: string
   avatar?: string

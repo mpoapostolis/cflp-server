@@ -4,11 +4,13 @@ import { User } from '../models/users'
 import * as bcrypt from 'bcrypt'
 import * as jwt from 'jsonwebtoken'
 import * as dotenv from 'dotenv'
+import * as R from 'ramda'
+import { Employee } from 'models/employees'
 const auth = Router()
 dotenv.config()
 
-function generateToken(_id: string, duration: string, key: string) {
-  return jwt.sign({ _id }, key, { expiresIn: duration })
+function generateToken(obj: Record<string, any>, duration: string, key: string) {
+  return jwt.sign(obj, key, { expiresIn: duration })
 }
 
 export function validateToken(req: Request, res: Response, next: NextFunction) {
@@ -25,17 +27,12 @@ export function validateToken(req: Request, res: Response, next: NextFunction) {
 }
 
 auth.post('/register', (req: Request, res: Response) => {
-  const { username = '', password = '' } = req.body
-  const { storeId = '' } = req.query
-  bcrypt.hash(password, 10, async (err, hash) => {
+  bcrypt.hash(req.body.password, 10, async (err, hash) => {
     await MongoHelper.connect()
     const collection = await MongoHelper.db.collection('users')
-
+    const infos = R.pick(['username', 'password', 'storeId'], req.body)
     collection
-      .insertOne({
-        username,
-        password: hash
-      })
+      .insertOne({ ...infos, password: hash })
       .catch(_ => res.sendStatus(500))
       .finally(() => {
         MongoHelper.client.close()
@@ -47,15 +44,13 @@ auth.post('/register', (req: Request, res: Response) => {
 auth.post('/login', async (req: Request, res: Response) => {
   const { username = '', password = '' } = req.body
   await MongoHelper.connect()
-
-  const user: User = await MongoHelper.db.collection('users').findOne({ username })
-
+  const user: User | Employee = await MongoHelper.db.collection('users').findOne({ username })
   if (user) {
     await bcrypt.compare(password, user.password)
     delete user.password
-    const { _id } = user
-    const token = await generateToken(_id, '2w', process.env['TOKEN'])
-    const refreshToken = await generateToken(_id, '1w', process.env['RTOKEN'])
+    const infos = R.pick(['_id', 'storeId'], user)
+    const token = await generateToken(infos, '2w', process.env['TOKEN'])
+    const refreshToken = await generateToken(infos, '1w', process.env['RTOKEN'])
     res.json({
       ...user,
       token,
