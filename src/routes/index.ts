@@ -6,13 +6,17 @@ import transactions from './transactions'
 import users from './users'
 import products from './products'
 
+const r = Router()
+
+r.use('/stores', stores)
+r.use('/auth', auth)
+r.use('/offers', offers)
+r.use('/transactions', transactions)
+r.use('/users', users)
+r.use('/products', products)
+
 const router = Router()
 
-router.use('/stores', stores)
-router.use('/auth', auth)
-router.use('/offers', offers)
-router.use('/transactions', transactions)
-router.use('/users', users)
-router.use('/products', products)
+router.use('/api', r)
 
 export default router

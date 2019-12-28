@@ -43,22 +43,31 @@ auth.post('/register', (req: Request, res: Response) => {
 
 auth.post('/login', async (req: Request, res: Response) => {
   const { username = '', password = '' } = req.body
+  const { user_type = 'client' } = req.query
+
   await MongoHelper.connect()
-  const user: User | Employee = await MongoHelper.db.collection('users').findOne({ username })
-  if (user) {
-    await bcrypt.compare(password, user.password)
-    delete user.password
-    const infos = R.pick(['_id', 'storeId'], user)
-    const token = await generateToken(infos, '2w', process.env['TOKEN'])
-    const refreshToken = await generateToken(infos, '1w', process.env['RTOKEN'])
-    res.json({
-      ...user,
-      token,
-      refreshToken
+  const user = (await MongoHelper.db.collection('users').findOne({ username })) as User | Employee
+  if (!user) {
+    res.status(404).json({
+      username: 'User not found'
     })
   } else {
-    res.status(401).json({
-      msg: 'bad credentials'
+    await bcrypt.compare(password, user.password, async (err, same) => {
+      if (same) {
+        delete user.password
+        const infos = R.pick(['_id', 'storeId'], user)
+        const token = await generateToken(infos, '2w', process.env['TOKEN'])
+        const refreshToken = await generateToken(infos, '1w', process.env['RTOKEN'])
+        res.status(200).json({
+          ...user,
+          token,
+          refreshToken
+        })
+      } else {
+        res.status(404).json({
+          password: 'Bad Credentials'
+        })
+      }
     })
   }
   MongoHelper.client.close()
