@@ -1,10 +1,6 @@
-export type Coords = [number, number]
+import { Product } from './products'
 
-type Product = {
-  name: string
-  price: number
-  rating: number
-}
+export type Coords = [number, number]
 
 type Store = {
   storeId: string
