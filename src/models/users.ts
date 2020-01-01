@@ -1,3 +1,5 @@
+import * as R from 'ramda'
+
 type Favorites = {
   storeId: string
   productId: string
@@ -16,6 +18,15 @@ export type User = {
   favorites: Favorites[]
   username: string
   password: string
+  storeId: string
+  permissions?: string[]
+}
+
+export function getUser(user: User) {
+  return R.pick(
+    ['_id', 'firstName', 'lastName', 'avatar', 'gender', 'age', 'loyaltyPoints', 'favorites', 'username'],
+    user
+  )
 }
 
 /**
