@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express'
-import { validateToken } from './auth'
-import { MongoHelper } from '../mongoHelper'
+import { validateToken } from '../auth'
+import { MongoHelper } from '../../mongoHelper'
 
 const transactions = Router()
 

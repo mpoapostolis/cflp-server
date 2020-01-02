@@ -1,17 +1,17 @@
-import * as R from 'ramda'
-
 type Favorites = {
   storeId: string
   productId: string
 }
 
-export type tokenInfo = { _id: string }
+export type ClientToken = { _id: string }
+export type EmployeeToken = { _id: string; storeId: string }
 
 export type User = {
   _id?: string
   firstName?: string
   lastName?: string
   avatar?: string
+  email?: string
   gender?: 'male' | 'female'
   age?: number
   loyaltyPoints: Record<string, number>
@@ -20,13 +20,6 @@ export type User = {
   password: string
   storeId: string
   permissions?: string[]
-}
-
-export function getUser(user: User) {
-  return R.pick(
-    ['_id', 'firstName', 'lastName', 'avatar', 'gender', 'age', 'loyaltyPoints', 'favorites', 'username'],
-    user
-  )
 }
 
 /**

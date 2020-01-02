@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express'
-import { redis } from '..'
+import { redis } from '../..'
 
 const users = Router()
 

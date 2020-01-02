@@ -9,5 +9,4 @@ type Store = {
   images: string[]
   description: string
   adress: string
-  products: Product[]
 }

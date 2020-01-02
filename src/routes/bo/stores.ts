@@ -1,15 +1,14 @@
 import { Router, Request, Response } from 'express'
-import { MongoHelper } from '../mongoHelper'
-import { redis } from '..'
-import { validateToken } from './auth'
-import { tokenInfo } from '../models/users'
+import { redis } from '../..'
+import { validateToken } from '../auth'
+import { ClientToken } from 'models/users'
+import { MongoHelper } from '../../mongoHelper'
 
 const stores = Router()
 
 stores.get('/', validateToken, async (req: Request, res: Response) => {
   const { offset = 0, limit = 25, lat = 0, lng = 0, id = '' } = req.query
-
-  const user = req.user as tokenInfo
+  const user = req.user as ClientToken
   redis.GEOADD('key', lat, lng, id)
   setTimeout(() => {
     redis.ZREM('key', id)

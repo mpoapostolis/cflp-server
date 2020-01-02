@@ -19,7 +19,7 @@ export function validateToken(req: Request, res: Response, next: NextFunction) {
   if (token === null) return res.sendStatus(401)
   jwt.verify(token, process.env['TOKEN'], (err, user) => {
     if (err) return res.sendStatus(403)
-    req.user = user
+    req.authInfo = user
     console.log(user)
     next()
   })
@@ -41,18 +41,27 @@ auth.post('/register', (req: Request, res: Response) => {
 })
 
 auth.post('/login', async (req: Request, res: Response) => {
-  const { username = '', password = '' } = req.body
+  const { username = '', password = '', origin = 'app' } = req.body
   await MongoHelper.connect()
   const user: User = await MongoHelper.db.collection('users').findOne({ username })
+  console.log(username, password)
   if (!user) {
     res.status(404).json({
-      username: 'User not found'
+      error: {
+        username: 'User not found'
+      }
     })
   } else {
     await bcrypt.compare(password, user.password, async (err, same) => {
       if (same) {
+        if (origin === 'admin' && !user.storeId)
+          return res.status(403).json({
+            error: {
+              username: 'user does not belont to any store'
+            }
+          })
         const client = R.omit(['password'], user)
-        const infos = R.pick([client._id], client)
+        const infos = R.pick(['_id', 'storeId'], client)
         const token = await generateToken(infos, '2w', process.env['TOKEN'])
         const refreshToken = await generateToken(infos, '1w', process.env['RTOKEN'])
         res.status(200).json({
@@ -62,7 +71,9 @@ auth.post('/login', async (req: Request, res: Response) => {
         })
       } else {
         res.status(404).json({
-          password: 'Bad Credentials'
+          error: {
+            password: 'Bad Credentials'
+          }
         })
       }
     })
