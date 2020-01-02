@@ -2,9 +2,10 @@ import { Router, Request, Response, NextFunction } from 'express'
 import { MongoHelper } from '../mongoHelper'
 import { User } from '../models/users'
 import * as bcrypt from 'bcrypt'
-import * as jwt from 'jsonwebtoken'
 import * as dotenv from 'dotenv'
 import * as R from 'ramda'
+import { validateAdminToken, generateToken, validateClientToken } from '../utils'
+
 const auth = Router()
 dotenv.config()
 
@@ -31,23 +32,6 @@ const getClientData = (data: User) =>
     ['_id', 'firstName', 'lastName', 'avatar', 'email', 'gender', 'age', 'loyaltyPoints', 'favorites', 'username'],
     data
   )
-
-function generateToken(obj: Record<string, any>, duration: string, key: string) {
-  return jwt.sign(obj, key, { expiresIn: duration })
-}
-
-export function validateToken(req: Request, res: Response, next: NextFunction) {
-  const authHeader = req.headers['authorization']
-  const token = authHeader && authHeader.split(' ')[1]
-
-  if (token === null) return res.sendStatus(401)
-  jwt.verify(token, process.env['TOKEN'], (err, user) => {
-    if (err) return res.sendStatus(403)
-    req.authInfo = user
-    console.log(user)
-    next()
-  })
-}
 
 auth.post('/register', (req: Request, res: Response) => {
   bcrypt.hash(req.body.password, 10, async (err, hash) => {

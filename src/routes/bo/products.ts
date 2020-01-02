@@ -1,11 +1,23 @@
 import { Router, Request, Response } from 'express'
-import { validateToken } from '../auth'
+import { validateAdminToken } from '../../utils'
 import { EmployeeToken } from 'models/users'
 import { MongoHelper } from '../../mongoHelper'
-
 const products = Router()
+import * as multer from 'multer'
 
-products.get('/products', validateToken, async (req: Request, res: Response) => {
+var storage = multer.diskStorage({
+  destination: function(req, file, cb) {
+    cb(null, __dirname)
+  },
+  filename: function(req, file, cb) {
+    const [, type] = file.mimetype.split('/')
+    cb(null, `${file.fieldname}_${Date.now()}.${type}`)
+  }
+})
+
+const upload = multer({ storage })
+
+products.get('/', validateAdminToken, async (req: Request, res: Response) => {
   const { offset = 0, limit = 25 } = req.query
   const user = req.user as EmployeeToken
 
@@ -23,7 +35,7 @@ products.get('/products', validateToken, async (req: Request, res: Response) => 
   res.send({ data })
 })
 
-products.get('/products/:id', validateToken, async (req: Request, res: Response) => {
+products.get('/:id', validateAdminToken, async (req: Request, res: Response) => {
   const params = req.params
   await MongoHelper.connect()
   const data = await MongoHelper.db.collection('products').find({ _id: params.id })
@@ -33,7 +45,11 @@ products.get('/products/:id', validateToken, async (req: Request, res: Response)
   res.json({})
 })
 
-products.post('/products', async (req: Request, res: Response) => {
+products.post('/', validateAdminToken, async (req: Request, res: Response) => {
+  res.json({})
+})
+
+products.post('/images', validateAdminToken, upload.array('image'), async (req: Request, res: Response) => {
   res.json({})
 })
 

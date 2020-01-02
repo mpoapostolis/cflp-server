@@ -1,10 +1,10 @@
 import { Router, Request, Response } from 'express'
-import { validateToken } from '../auth'
+import { validateAdminToken } from '../../utils'
 import { MongoHelper } from '../../mongoHelper'
 
 const transactions = Router()
 
-transactions.get('/', validateToken, async (req: Request, res: Response) => {
+transactions.get('/', validateAdminToken, async (req: Request, res: Response) => {
   const { offset = 0, limit = 25, from, to, storeId, userId } = req.query
 
   await MongoHelper.connect()
@@ -26,13 +26,13 @@ transactions.get('/', validateToken, async (req: Request, res: Response) => {
   res.json(results)
 })
 
-transactions.post('/debit', validateToken, async (req: Request, res: Response) => {
+transactions.post('/debit', validateAdminToken, async (req: Request, res: Response) => {
   res.json({
     a: 1
   })
 })
 
-transactions.post('/credit', validateToken, async (req: Request, res: Response) => {
+transactions.post('/credit', validateAdminToken, async (req: Request, res: Response) => {
   res.json({})
 })
 

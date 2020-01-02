@@ -1,11 +1,11 @@
 import { Router, Request, Response } from 'express'
-import { validateToken } from '../auth'
+import { validateAdminToken } from '../../utils'
 import { EmployeeToken } from 'models/users'
 import { MongoHelper } from '../../mongoHelper'
 
 const offers = Router()
 
-offers.get('/offers', validateToken, async (req: Request, res: Response) => {
+offers.get('/offers', validateAdminToken, async (req: Request, res: Response) => {
   const { offset = 0, limit = 25 } = req.query
   const user = req.user as EmployeeToken
 
@@ -23,7 +23,7 @@ offers.get('/offers', validateToken, async (req: Request, res: Response) => {
   res.send({ data })
 })
 
-offers.get('/offers/:id', validateToken, async (req: Request, res: Response) => {
+offers.get('/offers/:id', validateAdminToken, async (req: Request, res: Response) => {
   const params = req.params
   await MongoHelper.connect()
   const data = await MongoHelper.db.collection('offers').find({ _id: params.id })
