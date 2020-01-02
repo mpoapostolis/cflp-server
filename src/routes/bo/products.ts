@@ -5,6 +5,7 @@ import { MongoHelper } from '../../mongoHelper'
 const products = Router()
 import * as multer from 'multer'
 import * as R from 'ramda'
+import * as crypto from 'crypto'
 
 var storage = multer.diskStorage({
   destination: function(req, file, cb) {
@@ -12,7 +13,7 @@ var storage = multer.diskStorage({
   },
   filename: function(req, file, cb) {
     const [, type] = file.mimetype.split('/')
-    cb(null, `${file.fieldname}_${Date.now()}.${type}`)
+    cb(null, `${crypto.randomBytes(48).toString('hex')}.${type}`)
   }
 })
 
@@ -25,15 +26,20 @@ products.get('/', validateAdminToken, async (req: Request, res: Response) => {
   await MongoHelper.connect()
   const data = await MongoHelper.db
     .collection('products')
-    .find({ storesId: user.storeId })
+    .find({ storeId: user.storeId })
     .skip(+offset)
     .limit(+limit)
     .toArray()
+
+  const total = await MongoHelper.db
+    .collection('products')
+    .find({ storeId: user.storeId })
+    .count()
     .catch(r => r)
     .finally(() => {
       MongoHelper.client.close()
     })
-  res.send({ data })
+  res.send({ data, offset: +offset, limit: +limit, total })
 })
 
 products.get('/:id', validateAdminToken, async (req: Request, res: Response) => {
@@ -70,6 +76,8 @@ products.post('/', validateAdminToken, async (req: Request, res: Response) => {
 
 products.post('/images', validateAdminToken, upload.array('image'), async (req: Request, res: Response) => {
   const { lpReward, price, name } = JSON.parse(req.body.infos)
+  const paths = R.map((o: any) => R.prop('path', o), R.propOr([], 'files', req))
+  console.log(paths)
 
   const error = {}
   if (+lpReward < 0 || !Boolean(lpReward)) error['lpReward'] = 'loyalty points cant be empty or have negative value'
