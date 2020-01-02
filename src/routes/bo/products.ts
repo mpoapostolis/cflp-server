@@ -4,10 +4,11 @@ import { EmployeeToken } from 'models/users'
 import { MongoHelper } from '../../mongoHelper'
 const products = Router()
 import * as multer from 'multer'
+import * as R from 'ramda'
 
 var storage = multer.diskStorage({
   destination: function(req, file, cb) {
-    cb(null, __dirname)
+    cb(null, `/home/tolis/Desktop/projects/cflp/cflp-server/src/images`)
   },
   filename: function(req, file, cb) {
     const [, type] = file.mimetype.split('/')
@@ -46,10 +47,36 @@ products.get('/:id', validateAdminToken, async (req: Request, res: Response) => 
 })
 
 products.post('/', validateAdminToken, async (req: Request, res: Response) => {
-  res.json({})
+  const user = req.user as EmployeeToken
+  const { lpReward, name, price } = req.body
+  console.log(lpReward, price, name)
+
+  const error = {}
+  if (lpReward < 0 || !Boolean(lpReward)) error['lpReward'] = 'loyalty points cant be empty or have negative value'
+  if (price < 0 || !Boolean(price)) error['price'] = 'price cant be empty or have negative value'
+  if (!Boolean(name)) error['name'] = 'name cant be empty'
+  if (!R.isEmpty(error)) return res.status(400).json({ error })
+
+  await MongoHelper.connect()
+  const data = await MongoHelper.db.collection('products').insertOne({
+    lpReward,
+    name,
+    price,
+    storeId: user.storeId
+  })
+
+  res.json(data.ops[0])
 })
 
 products.post('/images', validateAdminToken, upload.array('image'), async (req: Request, res: Response) => {
+  const { lpReward, price, name } = JSON.parse(req.body.infos)
+
+  const error = {}
+  if (+lpReward < 0 || !Boolean(lpReward)) error['lpReward'] = 'loyalty points cant be empty or have negative value'
+  if (+price < 0 || !Boolean(price)) error['price'] = 'price cant be empty or have negative value'
+  if (!Boolean(name)) error['name'] = 'name cant be empty'
+  if (!R.isEmpty(error)) return res.status(400).json({ error })
+
   res.json({})
 })
 
