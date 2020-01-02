@@ -8,6 +8,30 @@ import * as R from 'ramda'
 const auth = Router()
 dotenv.config()
 
+const getEmployeeData = (data: User) =>
+  R.pick(
+    [
+      '_id',
+      'firstName',
+      'lastName',
+      'avatar',
+      'email',
+      'gender',
+      'age',
+      'favorites',
+      'username',
+      'permissions',
+      'storeId'
+    ],
+    data
+  )
+
+const getClientData = (data: User) =>
+  R.pick(
+    ['_id', 'firstName', 'lastName', 'avatar', 'email', 'gender', 'age', 'loyaltyPoints', 'favorites', 'username'],
+    data
+  )
+
 function generateToken(obj: Record<string, any>, duration: string, key: string) {
   return jwt.sign(obj, key, { expiresIn: duration })
 }
@@ -60,12 +84,12 @@ auth.post('/login', async (req: Request, res: Response) => {
               username: 'user does not belont to any store'
             }
           })
-        const client = R.omit(['password'], user)
-        const infos = R.pick(['_id', 'storeId'], client)
+        const infos = R.pick(['_id', 'storeId'], user)
         const token = await generateToken(infos, '2w', process.env['TOKEN'])
         const refreshToken = await generateToken(infos, '1w', process.env['RTOKEN'])
+        const usesInfos = origin === 'admin' ? getEmployeeData(user) : getClientData(user)
         res.status(200).json({
-          ...client,
+          ...usesInfos,
           token,
           refreshToken
         })
