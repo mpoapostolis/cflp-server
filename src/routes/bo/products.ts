@@ -139,15 +139,20 @@ products.delete('/:id/images', validateAdminToken, async (req: Request, res: Res
     .updateOne({ _id: new ObjectID(req.params.id) }, { $pull: { images: { $in: paths } } })
 
   paths.forEach(path => {
-    fs.unlink(`/home/tolis/Desktop/projects/cflp/cflp-server/src/${path}`, err => console.log(err))
+    fs.unlink(`/home/tolis/Desktop/projects/cflp/cflp-server/src/${path}`, err => {})
   })
   MongoHelper.client.close()
 
   res.json(data)
 })
 
-products.delete('/:id', async (req: Request, res: Response) => {
-  res.json({})
+products.delete('/:id', validateAdminToken, async (req: Request, res: Response) => {
+  await MongoHelper.connect()
+  await MongoHelper.db.collection('products').deleteOne({ _id: new ObjectID(req.params.id) })
+
+  MongoHelper.client.close()
+
+  res.json({ msg: 'ok' })
 })
 
 export default products
