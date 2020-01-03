@@ -2,10 +2,10 @@ import { Router, Request, Response } from 'express'
 import { validateAdminToken } from '../../utils'
 import { EmployeeToken } from 'models/users'
 import { MongoHelper } from '../../mongoHelper'
-const products = Router()
 import * as multer from 'multer'
 import * as R from 'ramda'
 import * as crypto from 'crypto'
+const products = Router()
 
 var storage = multer.diskStorage({
   destination: function(req, file, cb) {
@@ -20,13 +20,21 @@ var storage = multer.diskStorage({
 const upload = multer({ storage })
 
 products.get('/', validateAdminToken, async (req: Request, res: Response) => {
-  const { offset = 0, limit = 25 } = req.query
+  const {
+    offset = 0,
+    limit = 25,
+    searchTerm = '',
+    minLp = 0,
+    maxLp = Infinity,
+    minPrice = 0,
+    maxPrice = Infinity
+  } = req.query
   const user = req.user as EmployeeToken
 
   await MongoHelper.connect()
   const data = await MongoHelper.db
     .collection('products')
-    .find({ storeId: user.storeId })
+    .find({ storeId: user.storeId, name: { $regex: searchTerm }, lpReward: { $gt: +minPrice, $lt: +maxPrice } })
     .skip(+offset)
     .limit(+limit)
     .toArray()
@@ -44,40 +52,16 @@ products.get('/', validateAdminToken, async (req: Request, res: Response) => {
 
 products.get('/:id', validateAdminToken, async (req: Request, res: Response) => {
   const params = req.params
+  console.log(params)
   await MongoHelper.connect()
   const data = await MongoHelper.db.collection('products').find({ _id: params.id })
-
   MongoHelper.client.close()
   res.send({ data })
-  res.json({})
 })
 
-products.post('/', validateAdminToken, async (req: Request, res: Response) => {
-  const user = req.user as EmployeeToken
-  const { lpReward, name, price } = req.body
-  console.log(lpReward, price, name)
-
-  const error = {}
-  if (lpReward < 0 || !Boolean(lpReward)) error['lpReward'] = 'loyalty points cant be empty or have negative value'
-  if (price < 0 || !Boolean(price)) error['price'] = 'price cant be empty or have negative value'
-  if (!Boolean(name)) error['name'] = 'name cant be empty'
-  if (!R.isEmpty(error)) return res.status(400).json({ error })
-
-  await MongoHelper.connect()
-  const data = await MongoHelper.db.collection('products').insertOne({
-    lpReward,
-    name,
-    price,
-    storeId: user.storeId
-  })
-
-  res.json(data.ops[0])
-})
-
-products.post('/images', validateAdminToken, upload.array('image'), async (req: Request, res: Response) => {
+products.post('/', validateAdminToken, upload.array('image'), async (req: Request, res: Response) => {
   const { lpReward, price, name } = JSON.parse(req.body.infos)
-  const paths = R.map((o: any) => R.prop('path', o), R.propOr([], 'files', req))
-  console.log(paths)
+  const user = req.user as EmployeeToken
 
   const error = {}
   if (+lpReward < 0 || !Boolean(lpReward)) error['lpReward'] = 'loyalty points cant be empty or have negative value'
@@ -85,14 +69,28 @@ products.post('/images', validateAdminToken, upload.array('image'), async (req: 
   if (!Boolean(name)) error['name'] = 'name cant be empty'
   if (!R.isEmpty(error)) return res.status(400).json({ error })
 
+  const images = R.map((o: any) => R.prop('path', o), R.propOr([], 'files', req))
+
+  await MongoHelper.connect()
+  const data = await MongoHelper.db.collection('products').insertOne({
+    lpReward,
+    name,
+    price,
+    storeId: user.storeId,
+    images: images
+  })
+  MongoHelper.client.close()
+
+  res.json(data.ops[0])
+})
+
+products.put('/:id', async (req: Request, res: Response) => {
+  const { id } = req.params
+  console.log(id)
   res.json({})
 })
 
-products.put('/products/:id', async (req: Request, res: Response) => {
-  res.json({})
-})
-
-products.delete('/products/:id', async (req: Request, res: Response) => {
+products.delete('/:id', async (req: Request, res: Response) => {
   res.json({})
 })
 
