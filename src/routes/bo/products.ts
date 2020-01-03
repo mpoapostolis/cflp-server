@@ -5,6 +5,7 @@ import { MongoHelper } from '../../mongoHelper'
 import * as multer from 'multer'
 import * as R from 'ramda'
 import * as crypto from 'crypto'
+import { ObjectID } from 'bson'
 const products = Router()
 
 var storage = multer.diskStorage({
@@ -59,9 +60,9 @@ products.get('/:id', validateAdminToken, async (req: Request, res: Response) => 
   const params = req.params
   console.log(params)
   await MongoHelper.connect()
-  const data = await MongoHelper.db.collection('products').find({ _id: params.id })
+  const product = await MongoHelper.db.collection('products').findOne({ _id: new ObjectID(params.id) })
   MongoHelper.client.close()
-  res.send({ data })
+  res.json(product)
 })
 
 products.post('/', validateAdminToken, upload.array('image'), async (req: Request, res: Response) => {
@@ -74,9 +75,16 @@ products.post('/', validateAdminToken, upload.array('image'), async (req: Reques
   if (!Boolean(name)) error['name'] = 'name cant be empty'
   if (!R.isEmpty(error)) return res.status(400).json({ error })
 
-  const images = R.map((o: any) => R.prop('path', o), R.propOr([], 'files', req))
+  const images = R.map(
+    (o: any) => R.prop('path', o).replace('/home/tolis/Desktop/projects/cflp/cflp-server/src', ''),
+    R.propOr([], 'files', req)
+  )
 
   await MongoHelper.connect()
+  const nameAlreadyExists = await MongoHelper.db.collection('products').findOne({ name, storeId: user.storeId })
+  if (nameAlreadyExists) {
+    return res.status(400).json({ error: { name: 'name already exists' } })
+  }
   const data = await MongoHelper.db.collection('products').insertOne({
     lpReward,
     name,
