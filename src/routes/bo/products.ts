@@ -6,6 +6,7 @@ import * as multer from 'multer'
 import * as R from 'ramda'
 import * as crypto from 'crypto'
 import { ObjectID } from 'bson'
+import * as fs from 'fs'
 const products = Router()
 
 var storage = multer.diskStorage({
@@ -58,7 +59,6 @@ products.get('/', validateAdminToken, async (req: Request, res: Response) => {
 
 products.get('/:id', validateAdminToken, async (req: Request, res: Response) => {
   const params = req.params
-  console.log(params)
   await MongoHelper.connect()
   const product = await MongoHelper.db.collection('products').findOne({ _id: new ObjectID(params.id) })
   MongoHelper.client.close()
@@ -97,10 +97,53 @@ products.post('/', validateAdminToken, upload.array('image'), async (req: Reques
   res.json(data.ops[0])
 })
 
-products.put('/:id', async (req: Request, res: Response) => {
-  const { id } = req.params
-  console.log(id)
-  res.json({})
+products.put('/:id', validateAdminToken, upload.array('image'), async (req: Request, res: Response) => {
+  const { lpReward, price, name } = JSON.parse(req.body.infos)
+  const user = req.user as EmployeeToken
+
+  const error = {}
+  if (+lpReward < 0 || !Boolean(lpReward)) error['lpReward'] = 'loyalty points cant be empty or have negative value'
+  if (+price < 0 || !Boolean(price)) error['price'] = 'price cant be empty or have negative value'
+  if (!Boolean(name)) error['name'] = 'name cant be empty'
+  if (!R.isEmpty(error)) return res.status(400).json({ error })
+
+  const images = R.map(
+    (o: any) => R.prop('path', o).replace('/home/tolis/Desktop/projects/cflp/cflp-server/src', ''),
+    R.propOr([], 'files', req)
+  )
+
+  await MongoHelper.connect()
+  await MongoHelper.db.collection('products').updateOne(
+    { _id: new ObjectID(req.params.id) },
+    {
+      $push: { images: { $each: images } },
+      $set: {
+        lpReward,
+        name,
+        price,
+        storeId: user.storeId
+      }
+    }
+  )
+  MongoHelper.client.close()
+
+  res.json({ msg: 'ok' })
+})
+
+products.delete('/:id/images', validateAdminToken, async (req: Request, res: Response) => {
+  const { paths = [] } = req.body
+
+  await MongoHelper.connect()
+  const data = await MongoHelper.db
+    .collection('products')
+    .updateOne({ _id: new ObjectID(req.params.id) }, { $pull: { images: { $in: paths } } })
+
+  paths.forEach(path => {
+    fs.unlink(`/home/tolis/Desktop/projects/cflp/cflp-server/src/${path}`, err => console.log(err))
+  })
+  MongoHelper.client.close()
+
+  res.json(data)
 })
 
 products.delete('/:id', async (req: Request, res: Response) => {
