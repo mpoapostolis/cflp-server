@@ -34,7 +34,12 @@ products.get('/', validateAdminToken, async (req: Request, res: Response) => {
   await MongoHelper.connect()
   const data = await MongoHelper.db
     .collection('products')
-    .find({ storeId: user.storeId, name: { $regex: searchTerm }, lpReward: { $gt: +minPrice, $lt: +maxPrice } })
+    .find({
+      storeId: user.storeId,
+      name: { $regex: searchTerm },
+      price: { $gt: +minPrice, $lt: +maxPrice },
+      lpReward: { $gt: +minLp, $lt: +maxLp }
+    })
     .skip(+offset)
     .limit(+limit)
     .toArray()
