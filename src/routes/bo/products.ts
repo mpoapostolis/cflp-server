@@ -15,7 +15,7 @@ var storage = multer.diskStorage({
   },
   filename: function(req, file, cb) {
     const [, type] = file.mimetype.split('/')
-    cb(null, `${crypto.randomBytes(48).toString('hex')}.${type}`)
+    cb(null, `${crypto.randomBytes(18).toString('hex')}.${type}`)
   }
 })
 
@@ -38,7 +38,7 @@ products.get('/', validateAdminToken, async (req: Request, res: Response) => {
     .collection('products')
     .find({
       storeId: user.storeId,
-      name: { $regex: searchTerm },
+      name: { $regex: searchTerm, $options: 'i' },
       price: { $gt: +minPrice, $lt: +maxPrice },
       lpReward: { $gt: +minLp, $lt: +maxLp }
     })
