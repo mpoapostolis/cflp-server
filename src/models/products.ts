@@ -5,5 +5,6 @@ export type Product = {
   lpPrice: number
   rating: number
   lpReward: number
+  purchased: number
   images: string[]
 }

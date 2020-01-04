@@ -71,7 +71,6 @@ products.post('/', validateAdminToken, upload.array('image'), async (req: Reques
 
   const error = {}
   if (+lpReward < 0 || !Boolean(lpReward)) error['lpReward'] = 'loyalty points cant be empty or have negative value'
-  if (+lpPrice < 0 || !Boolean(lpPrice)) error['lpPrice'] = 'loyalty points Price cant be empty or have negative value'
   if (+price < 0 || !Boolean(price)) error['price'] = 'price cant be empty or have negative value'
   if (!Boolean(name)) error['name'] = 'name cant be empty'
   if (!R.isEmpty(error)) return res.status(400).json({ error })
@@ -105,7 +104,6 @@ products.put('/:id', validateAdminToken, upload.array('image'), async (req: Requ
 
   const error = {}
   if (+lpReward < 0 || !Boolean(lpReward)) error['lpReward'] = 'loyalty points cant be empty or have negative value'
-  if (+lpPrice < 0 || !Boolean(lpPrice)) error['lpPrice'] = 'loyalty points Price cant be empty or have negative value'
   if (+price < 0 || !Boolean(price)) error['price'] = 'price cant be empty or have negative value'
   if (!Boolean(name)) error['name'] = 'name cant be empty'
   if (!R.isEmpty(error)) return res.status(400).json({ error })

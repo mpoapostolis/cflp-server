@@ -12,5 +12,6 @@ type Offser = {
   loyaltyPoints?: number
   status: offerStatus
   images: string[]
+  purchased: number
   description: string
 }
