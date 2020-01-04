@@ -26,10 +26,14 @@ products.get('/', validateAdminToken, async (req: Request, res: Response) => {
     offset = 0,
     limit = 25,
     searchTerm = '',
-    minLp = 0,
-    maxLp = Infinity,
+    minLpReward = 0,
+    maxLpReward = Infinity,
     minPrice = 0,
-    maxPrice = Infinity
+    maxPrice = Infinity,
+    minPurchased = 0,
+    maxPurchased = Infinity,
+    minLpPrice = 0,
+    maxLpPrice = Infinity
   } = req.query
   const user = req.user as EmployeeToken
 
@@ -40,7 +44,9 @@ products.get('/', validateAdminToken, async (req: Request, res: Response) => {
       storeId: user.storeId,
       name: { $regex: searchTerm, $options: 'i' },
       price: { $gt: +minPrice, $lt: +maxPrice },
-      lpReward: { $gt: +minLp, $lt: +maxLp }
+      lpReward: { $gt: +minLpReward, $lt: +maxLpReward },
+      purchased: { $gt: +minPurchased, $lt: +maxPurchased },
+      lpPrice: { $gt: +minLpPrice, $lt: +maxLpPrice }
     })
     .skip(+offset)
     .limit(+limit)
