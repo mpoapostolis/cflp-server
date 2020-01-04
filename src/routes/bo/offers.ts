@@ -30,7 +30,7 @@ offers.get('/', validateAdminToken, async (req: Request, res: Response) => {
     .collection('offers')
     .find({
       storeId: user.storeId,
-      name: { $regex: searchTerm, $options: 'i' }
+      name: { $regex: searchTerm, $options: 'gi' }
     })
     .skip(+offset)
     .limit(+limit)
@@ -56,12 +56,11 @@ offers.get('/:id', validateAdminToken, async (req: Request, res: Response) => {
 })
 
 offers.post('/', validateAdminToken, upload.array('image'), async (req: Request, res: Response) => {
-  const { lpReward, price, name } = JSON.parse(req.body.infos)
+  const { name, description = '', status, loyaltyPoints } = JSON.parse(req.body.infos)
   const user = req.user as EmployeeToken
 
   const error = {}
-  if (+lpReward < 0 || !Boolean(lpReward)) error['lpReward'] = 'loyalty points cant be empty or have negative value'
-  if (+price < 0 || !Boolean(price)) error['price'] = 'price cant be empty or have negative value'
+  if (!['ACTIVE', 'INACTIVE'].includes(status)) error['status'] = 'status must be ACTIVE or INACTIVE'
   if (!Boolean(name)) error['name'] = 'name cant be empty'
   if (!R.isEmpty(error)) return res.status(400).json({ error })
 
@@ -76,11 +75,12 @@ offers.post('/', validateAdminToken, upload.array('image'), async (req: Request,
     return res.status(400).json({ error: { name: 'name already exists' } })
   }
   const data = await MongoHelper.db.collection('offers').insertOne({
-    lpReward,
     name,
-    price,
-    storeId: user.storeId,
-    images: images
+    description,
+    status,
+    images,
+    loyaltyPoints,
+    storeId: user.storeId
   })
   MongoHelper.client.close()
 
@@ -88,12 +88,13 @@ offers.post('/', validateAdminToken, upload.array('image'), async (req: Request,
 })
 
 offers.put('/:id', validateAdminToken, upload.array('image'), async (req: Request, res: Response) => {
-  const { lpReward, price, name } = JSON.parse(req.body.infos)
+  const { name, description = '', status, loyaltyPoints } = JSON.parse(req.body.infos)
   const user = req.user as EmployeeToken
 
   const error = {}
-  if (+lpReward < 0 || !Boolean(lpReward)) error['lpReward'] = 'loyalty points cant be empty or have negative value'
-  if (+price < 0 || !Boolean(price)) error['price'] = 'price cant be empty or have negative value'
+  if (+loyaltyPoints < 0 || !Boolean(loyaltyPoints))
+    error['loyaltyPoints'] = 'loyalty points cant be empty or have negative value'
+  if (!['ACTIVE', 'INACTIVE'].includes(status)) error['status'] = 'status must be ACTIVE or INACTIVE'
   if (!Boolean(name)) error['name'] = 'name cant be empty'
   if (!R.isEmpty(error)) return res.status(400).json({ error })
 
@@ -108,9 +109,10 @@ offers.put('/:id', validateAdminToken, upload.array('image'), async (req: Reques
     {
       $push: { images: { $each: images } },
       $set: {
-        lpReward,
         name,
-        price,
+        description,
+        status,
+        loyaltyPoints,
         storeId: user.storeId
       }
     }
