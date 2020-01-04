@@ -66,11 +66,12 @@ products.get('/:id', validateAdminToken, async (req: Request, res: Response) => 
 })
 
 products.post('/', validateAdminToken, upload.array('image'), async (req: Request, res: Response) => {
-  const { lpReward, price, name } = JSON.parse(req.body.infos)
+  const { lpPrice, lpReward, price, name } = JSON.parse(req.body.infos)
   const user = req.user as EmployeeToken
 
   const error = {}
   if (+lpReward < 0 || !Boolean(lpReward)) error['lpReward'] = 'loyalty points cant be empty or have negative value'
+  if (+lpPrice < 0 || !Boolean(lpPrice)) error['lpPrice'] = 'loyalty points Price cant be empty or have negative value'
   if (+price < 0 || !Boolean(price)) error['price'] = 'price cant be empty or have negative value'
   if (!Boolean(name)) error['name'] = 'name cant be empty'
   if (!R.isEmpty(error)) return res.status(400).json({ error })
@@ -86,10 +87,11 @@ products.post('/', validateAdminToken, upload.array('image'), async (req: Reques
     return res.status(400).json({ error: { name: 'name already exists' } })
   }
   const data = await MongoHelper.db.collection('products').insertOne({
+    storeId: user.storeId,
     lpReward,
     name,
     price,
-    storeId: user.storeId,
+    lpPrice,
     images: images
   })
   MongoHelper.client.close()
@@ -98,11 +100,12 @@ products.post('/', validateAdminToken, upload.array('image'), async (req: Reques
 })
 
 products.put('/:id', validateAdminToken, upload.array('image'), async (req: Request, res: Response) => {
-  const { lpReward, price, name } = JSON.parse(req.body.infos)
+  const { lpReward, price, lpPrice, name } = JSON.parse(req.body.infos)
   const user = req.user as EmployeeToken
 
   const error = {}
   if (+lpReward < 0 || !Boolean(lpReward)) error['lpReward'] = 'loyalty points cant be empty or have negative value'
+  if (+lpPrice < 0 || !Boolean(lpPrice)) error['lpPrice'] = 'loyalty points Price cant be empty or have negative value'
   if (+price < 0 || !Boolean(price)) error['price'] = 'price cant be empty or have negative value'
   if (!Boolean(name)) error['name'] = 'name cant be empty'
   if (!R.isEmpty(error)) return res.status(400).json({ error })
@@ -119,6 +122,7 @@ products.put('/:id', validateAdminToken, upload.array('image'), async (req: Requ
       $push: { images: { $each: images } },
       $set: {
         lpReward,
+        lpPrice,
         name,
         price,
         storeId: user.storeId
