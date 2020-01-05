@@ -51,6 +51,7 @@ products.get('/', validateAdminToken, async (req: Request, res: Response) => {
     .skip(+offset)
     .limit(+limit)
     .toArray()
+    .catch(console.log)
 
   const total = await MongoHelper.db
     .collection('products')

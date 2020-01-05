@@ -10,9 +10,9 @@ stores.get('/', validateAdminToken, async (req: Request, res: Response) => {
   const { offset = 0, limit = 25, lat = 0, lng = 0, id = '' } = req.query
   const user = req.user as ClientToken
   redis.GEOADD('key', lat, lng, id)
-  setTimeout(() => {
-    redis.ZREM('key', id)
-  }, 30000)
+  // setTimeout(() => {
+  //   redis.ZREM('key', id)
+  // }, 30000)
   await MongoHelper.connect()
   const data = await MongoHelper.db
     .collection('stores')

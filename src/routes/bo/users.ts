@@ -1,9 +1,10 @@
 import { Router, Request, Response } from 'express'
 import { redis } from '../..'
+import { validateAdminToken } from '../../utils'
 
 const users = Router()
 
-users.get('/near', async (req: Request, res: Response) => {
+users.get('/near', validateAdminToken, async (req: Request, res: Response) => {
   const { lat, lng, radius } = req.query
 
   redis.GEORADIUS('key', lat, lng, radius, 'km', 'WITHCOORD', function(error, result) {

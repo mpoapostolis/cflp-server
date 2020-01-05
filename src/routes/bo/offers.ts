@@ -35,6 +35,7 @@ offers.get('/', validateAdminToken, async (req: Request, res: Response) => {
     .skip(+offset)
     .limit(+limit)
     .toArray()
+    .catch(console.log)
 
   const total = await MongoHelper.db
     .collection('offers')
@@ -60,7 +61,7 @@ offers.post('/', validateAdminToken, upload.array('image'), async (req: Request,
   const user = req.user as EmployeeToken
 
   const error = {}
-  if (!['ACTIVE', 'INACTIVE'].includes(status)) error['status'] = 'status must be ACTIVE or INACTIVE'
+  if (!['ACTIVE', 'DRAFT'].includes(status)) error['status'] = 'status must be ACTIVE or DRAFT'
   if (!Boolean(name)) error['name'] = 'name cant be empty'
   if (!R.isEmpty(error)) return res.status(400).json({ error })
 
@@ -88,12 +89,10 @@ offers.post('/', validateAdminToken, upload.array('image'), async (req: Request,
 })
 
 offers.put('/:id', validateAdminToken, upload.array('image'), async (req: Request, res: Response) => {
-  const { name, description = '', status, loyaltyPoints } = JSON.parse(req.body.infos)
+  const { name, description = '', status, loyaltyPoints, discounts = [] } = JSON.parse(req.body.infos)
   const user = req.user as EmployeeToken
 
   const error = {}
-  if (+loyaltyPoints < 0 || !Boolean(loyaltyPoints))
-    error['loyaltyPoints'] = 'loyalty points cant be empty or have negative value'
   if (!['ACTIVE', 'INACTIVE'].includes(status)) error['status'] = 'status must be ACTIVE or INACTIVE'
   if (!Boolean(name)) error['name'] = 'name cant be empty'
   if (!R.isEmpty(error)) return res.status(400).json({ error })
@@ -112,7 +111,7 @@ offers.put('/:id', validateAdminToken, upload.array('image'), async (req: Reques
         name,
         description,
         status,
-        loyaltyPoints,
+        discounts,
         storeId: user.storeId
       }
     }
@@ -160,9 +159,7 @@ offers.post('/activate', validateAdminToken, async (req: Request, res: Response)
 
 offers.post('/deactivate', validateAdminToken, async (req: Request, res: Response) => {
   await MongoHelper.connect()
-  await MongoHelper.db
-    .collection('offers')
-    .updateOne({ _id: new ObjectID(req.body.id) }, { $set: { status: 'INACTIVE' } })
+  await MongoHelper.db.collection('offers').updateOne({ _id: new ObjectID(req.body.id) }, { $set: { status: 'DRAFT' } })
 
   MongoHelper.client.close()
 
