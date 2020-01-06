@@ -6,8 +6,8 @@ enum offerStatus {
 }
 
 enum offerType {
-  CHARGE = 'CHARGE',
-  REWARD = 'REWARD'
+  DEBIT = 'DEBIT',
+  CREDIT = 'CREDIT'
 }
 
 type Offser = {
