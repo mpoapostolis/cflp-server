@@ -1,9 +1,8 @@
 type transactions = {
-  transactionsId?: string
+  _id: string
   storeId: string
   userId: string
-  price: number
+  productId: number
   offerId?: string
-  loyaltyPoints?: number
-  date: number
+  dateCreated: number
 }

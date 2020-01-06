@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express'
 import { validateAdminToken } from '../../utils'
 import { MongoHelper } from '../../mongoHelper'
+import { EmployeeToken } from 'models/users'
 
 const transactions = Router()
 
@@ -26,7 +27,10 @@ transactions.get('/', validateAdminToken, async (req: Request, res: Response) =>
   res.json(results)
 })
 
-transactions.post('/debit', validateAdminToken, async (req: Request, res: Response) => {
+transactions.post('/', validateAdminToken, async (req: Request, res: Response) => {
+  const user = req.user as EmployeeToken
+  console.log(user)
+
   res.json({
     a: 1
   })
