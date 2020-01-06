@@ -7,7 +7,24 @@ import { ObjectId } from 'mongodb'
 const transactions = Router()
 
 transactions.get('/', validateAdminToken, async (req: Request, res: Response) => {
-  const { offset = 0, limit = 25, searchTerm = '', from, to } = req.query
+  const { offset = 0, limit = 25, type = 'products', searchTerm = '', from, to } = req.query
+
+  const lookUp = {
+    $lookup:
+      type === 'products'
+        ? {
+            from: 'products',
+            localField: 'productId',
+            foreignField: '_id',
+            as: 'product'
+          }
+        : {
+            from: 'offers',
+            localField: 'offerId',
+            foreignField: '_id',
+            as: 'offer'
+          }
+  }
 
   await MongoHelper.connect()
   const data = await MongoHelper.db
@@ -21,22 +38,8 @@ transactions.get('/', validateAdminToken, async (req: Request, res: Response) =>
           as: 'user'
         }
       },
-      {
-        $lookup: {
-          from: 'products',
-          localField: 'productId',
-          foreignField: '_id',
-          as: 'product'
-        }
-      },
-      {
-        $lookup: {
-          from: 'offers',
-          localField: 'offerId',
-          foreignField: '_id',
-          as: 'offer'
-        }
-      },
+      lookUp,
+      { $match: { productId: { $exists: type === 'products' ? 1 : 0 } } },
       { $limit: +limit + +offset },
       { $skip: +offset },
       {
@@ -75,7 +78,7 @@ transactions.get('/', validateAdminToken, async (req: Request, res: Response) =>
 
   const total = await MongoHelper.db
     .collection('transactions')
-    .find({})
+    .find({ productId: { $exists: type === 'products' ? 1 : 0 } })
     .count()
     .finally(() => {
       MongoHelper.client.close()
