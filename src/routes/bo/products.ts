@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express'
-import { validateAdminToken } from '../../utils'
+import { validateAdminToken, generateSortFilter } from '../../utils'
 import { EmployeeToken } from 'models/users'
 import { MongoHelper } from '../../mongoHelper'
 import * as multer from 'multer'
@@ -22,19 +22,10 @@ var storage = multer.diskStorage({
 const upload = multer({ storage })
 
 products.get('/', validateAdminToken, async (req: Request, res: Response) => {
-  const {
-    offset = 0,
-    limit = 25,
-    searchTerm = '',
-    minLpReward = -Infinity,
-    maxLpReward = Infinity,
-    minPrice = -Infinity,
-    maxPrice = Infinity,
-    minPurchased = -Infinity,
-    maxPurchased = Infinity,
-    minLpPrice = -Infinity,
-    maxLpPrice = Infinity
-  } = req.query
+  const { offset = 0, limit = 25, searchTerm = '', sortBy = 'date:DESC' } = req.query
+
+  const sort = generateSortFilter(sortBy)
+
   const user = req.user as EmployeeToken
 
   await MongoHelper.connect()
@@ -42,12 +33,9 @@ products.get('/', validateAdminToken, async (req: Request, res: Response) => {
     .collection('products')
     .find({
       storeId: user.storeId,
-      name: { $regex: searchTerm, $options: 'i' },
-      price: { $gt: +minPrice, $lt: +maxPrice },
-      lpReward: { $gt: +minLpReward, $lt: +maxLpReward },
-      purchased: { $gt: +minPurchased, $lt: +maxPurchased },
-      lpPrice: { $gt: +minLpPrice, $lt: +maxLpPrice }
+      name: { $regex: searchTerm, $options: 'i' }
     })
+    .sort(sort)
     .skip(+offset)
     .limit(+limit)
     .toArray()
@@ -73,7 +61,7 @@ products.get('/:id', validateAdminToken, async (req: Request, res: Response) => 
 })
 
 products.post('/', validateAdminToken, upload.array('image'), async (req: Request, res: Response) => {
-  const { lpPrice, lpReward, price, name } = JSON.parse(req.body.infos)
+  const { lpPrice = 0, lpReward = 0, price = 0, name = '' } = JSON.parse(req.body.infos)
   const user = req.user as EmployeeToken
 
   const error = {}
@@ -98,7 +86,8 @@ products.post('/', validateAdminToken, upload.array('image'), async (req: Reques
     name,
     price,
     lpPrice,
-    images: images
+    images: images,
+    purchased: 0
   })
   MongoHelper.client.close()
 

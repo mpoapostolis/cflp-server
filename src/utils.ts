@@ -30,3 +30,10 @@ export function validateClientToken(req: Request, res: Response, next: NextFunct
     next()
   })
 }
+
+export function generateSortFilter(sortBy: string) {
+  const [key, dir] = sortBy.split(':')
+  const direction = dir === 'ASC' ? 1 : -1
+  const k = key === 'date' ? '_id' : key
+  return { [k]: direction }
+}

@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express'
-import { validateAdminToken } from '../../utils'
+import { validateAdminToken, generateSortFilter } from '../../utils'
 import { EmployeeToken } from 'models/users'
 import { MongoHelper } from '../../mongoHelper'
 import * as multer from 'multer'
@@ -22,7 +22,9 @@ var storage = multer.diskStorage({
 const upload = multer({ storage })
 
 offers.get('/', validateAdminToken, async (req: Request, res: Response) => {
-  const { offset = 0, limit = 25, searchTerm = '' } = req.query
+  const { offset = 0, limit = 25, searchTerm = '', status, type, sortBy = 'date:DESC' } = req.query
+  const sort = generateSortFilter(sortBy)
+
   const user = req.user as EmployeeToken
 
   await MongoHelper.connect()
@@ -30,10 +32,14 @@ offers.get('/', validateAdminToken, async (req: Request, res: Response) => {
     .collection('offers')
     .find({
       storeId: user.storeId,
-      name: { $regex: searchTerm, $options: 'gi' }
+      name: { $regex: searchTerm, $options: 'gi' },
+      status: status,
+      type: type
     })
+    .sort(sort)
     .skip(+offset)
     .limit(+limit)
+
     .toArray()
     .catch(console.log)
 
@@ -89,11 +95,11 @@ offers.post('/', validateAdminToken, upload.array('image'), async (req: Request,
 })
 
 offers.put('/:id', validateAdminToken, upload.array('image'), async (req: Request, res: Response) => {
-  const { name, description = '', status, loyaltyPoints, discounts = [] } = JSON.parse(req.body.infos)
+  const { name, description = '', status, discounts = [] } = JSON.parse(req.body.infos)
   const user = req.user as EmployeeToken
 
   const error = {}
-  if (!['ACTIVE', 'INACTIVE'].includes(status)) error['status'] = 'status must be ACTIVE or INACTIVE'
+  if (!['ACTIVE', 'DRAFT'].includes(status)) error['status'] = 'status must be ACTIVE or DRAFT'
   if (!Boolean(name)) error['name'] = 'name cant be empty'
   if (!R.isEmpty(error)) return res.status(400).json({ error })
 

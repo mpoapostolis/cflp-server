@@ -52,7 +52,6 @@ auth.post('/login', async (req: Request, res: Response) => {
   const { username = '', password = '', origin = 'app' } = req.body
   await MongoHelper.connect()
   const user: User = await MongoHelper.db.collection('users').findOne({ username })
-  console.log(username, password)
   if (!user) {
     res.status(404).json({
       error: {
