@@ -8,10 +8,12 @@ import * as crypto from 'crypto'
 import { ObjectID } from 'bson'
 import * as fs from 'fs'
 const products = Router()
+import * as mkdirp from 'mkdirp'
 
-var storage = multer.diskStorage({
+const storage = multer.diskStorage({
   destination: function(req, file, cb) {
-    cb(null, `/home/tolis/Desktop/projects/cflp/cflp-server/src/uploads`)
+    mkdirp.sync(process.env['UPLOAD_PATH'])
+    cb(null, process.env['UPLOAD_PATH'])
   },
   filename: function(req, file, cb) {
     const [, type] = file.mimetype.split('/')
@@ -23,7 +25,6 @@ const upload = multer({ storage })
 
 products.get('/', validateAdminToken, async (req: Request, res: Response) => {
   const { offset = 0, limit = 25, searchTerm = '', sortBy = 'date:DESC' } = req.query
-
   const sort = generateSortFilter(sortBy)
 
   const user = req.user as EmployeeToken
@@ -70,10 +71,8 @@ products.post('/', validateAdminToken, upload.array('image'), async (req: Reques
   if (!Boolean(name)) error['name'] = 'name cant be empty'
   if (!R.isEmpty(error)) return res.status(400).json({ error })
 
-  const images = R.map(
-    (o: any) => R.prop('path', o).replace('/home/tolis/Desktop/projects/cflp/cflp-server/src', ''),
-    R.propOr([], 'files', req)
-  )
+  const files: any[] = R.propOr([], 'files', req)
+  const images = files.map(o => `/uploads/${o.filename}`)
 
   await MongoHelper.connect()
   const nameAlreadyExists = await MongoHelper.db.collection('products').findOne({ name, storeId: user.storeId })
@@ -104,10 +103,8 @@ products.put('/:id', validateAdminToken, upload.array('image'), async (req: Requ
   if (!Boolean(name)) error['name'] = 'name cant be empty'
   if (!R.isEmpty(error)) return res.status(400).json({ error })
 
-  const images = R.map(
-    (o: any) => R.prop('path', o).replace('/home/tolis/Desktop/projects/cflp/cflp-server/src', ''),
-    R.propOr([], 'files', req)
-  )
+  const files: any[] = R.propOr([], 'files', req)
+  const images = files.map(o => `/uploads/${o.filename}`)
 
   await MongoHelper.connect()
   await MongoHelper.db.collection('products').updateOne(
