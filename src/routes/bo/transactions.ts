@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express'
-import { validateAdminToken } from '../../utils'
+import { validateAdminToken, generateSortFilter } from '../../utils'
 import { MongoHelper } from '../../mongoHelper'
 import { EmployeeToken } from 'models/users'
 import { ObjectId } from 'mongodb'
@@ -7,7 +7,18 @@ import { ObjectId } from 'mongodb'
 const transactions = Router()
 
 transactions.get('/', validateAdminToken, async (req: Request, res: Response) => {
-  const { offset = 0, limit = 25, type = 'products', searchTerm = '', from, to } = req.query
+  const {
+    offset = 0,
+    limit = 25,
+    type = 'products',
+    searchTerm = '',
+    offerType,
+    from,
+    to,
+    sortBy = 'date:DESC'
+  } = req.query
+
+  const sort = generateSortFilter(sortBy)
 
   const lookUp = {
     $lookup:
@@ -67,11 +78,16 @@ transactions.get('/', validateAdminToken, async (req: Request, res: Response) =>
           userName: '$user.username',
           productName: '$product.name',
           productPrice: '$product.price',
+          productReward: '$product.lpReward',
           productId: '$product._id',
           offerName: '$offer.name',
+          offerReward: '$offer.lpReward',
+          offerPrice: '$offer.lpPrice',
+          offerType: '$offer.type',
           offerId: '$offer._id'
         }
-      }
+      },
+      { $sort: sort }
     ])
     .toArray()
     .catch(console.log)

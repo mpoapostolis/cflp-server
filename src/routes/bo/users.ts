@@ -1,20 +1,47 @@
 import { Router, Request, Response } from 'express'
-import { redis } from '../..'
-import { validateAdminToken } from '../../utils'
-
+import { validateAdminToken, generateSortFilter } from '../../utils'
+import { EmployeeToken } from 'models/users'
+import { MongoHelper } from '../../mongoHelper'
+import { ObjectID } from 'bson'
 const users = Router()
 
-users.get('/near', validateAdminToken, async (req: Request, res: Response) => {
-  const { lat, lng, radius } = req.query
+users.get('/', validateAdminToken, async (req: Request, res: Response) => {
+  const { offset = 0, limit = 25, searchTerm = '', sortBy = 'date:DESC' } = req.query
 
-  redis.GEORADIUS('key', lat, lng, radius, 'km', 'WITHCOORD', function(error, result) {
-    if (error) {
-      console.log(error)
-      throw error
-    }
-    const data = result.map(arr => arr[1])
-    res.json({ data: data.slice(0, 25), total: data.length })
-  })
+  const sort = generateSortFilter(sortBy)
+
+  const user = req.user as EmployeeToken
+
+  await MongoHelper.connect()
+  const data = await MongoHelper.db
+    .collection('users')
+    .find({
+      storeId: user.storeId,
+      username: { $regex: searchTerm, $options: 'i' }
+    })
+    .sort(sort)
+    .skip(+offset)
+    .limit(+limit)
+    .toArray()
+    .catch(console.log)
+
+  const total = await MongoHelper.db
+    .collection('users')
+    .find({ storeId: user.storeId })
+    .count()
+    .catch(r => r)
+    .finally(() => {
+      MongoHelper.client.close()
+    })
+  res.send({ data, offset: +offset, limit: +limit, total })
+})
+
+users.get('/:id', validateAdminToken, async (req: Request, res: Response) => {
+  const params = req.params
+  await MongoHelper.connect()
+  const product = await MongoHelper.db.collection('users').findOne({ _id: new ObjectID(params.id) })
+  MongoHelper.client.close()
+  res.json(product)
 })
 
 export default users
