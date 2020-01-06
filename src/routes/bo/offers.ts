@@ -24,6 +24,9 @@ const upload = multer({ storage })
 offers.get('/', validateAdminToken, async (req: Request, res: Response) => {
   const { offset = 0, limit = 25, searchTerm = '', status, type, sortBy = 'date:DESC' } = req.query
   const sort = generateSortFilter(sortBy)
+  let filters = {}
+  if (status) filters['status'] = status
+  if (type) filters['type'] = type
 
   const user = req.user as EmployeeToken
 
@@ -33,8 +36,7 @@ offers.get('/', validateAdminToken, async (req: Request, res: Response) => {
     .find({
       storeId: user.storeId,
       name: { $regex: searchTerm, $options: 'gi' },
-      status: status,
-      type: type
+      ...filters
     })
     .sort(sort)
     .skip(+offset)
