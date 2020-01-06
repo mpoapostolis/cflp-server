@@ -36,11 +36,14 @@ transactions.get('/', validateAdminToken, async (req: Request, res: Response) =>
             as: 'offer'
           }
   }
-
+  console.log(sort)
   await MongoHelper.connect()
   const data = await MongoHelper.db
     .collection('transactions')
     .aggregate([
+      {
+        $sort: sort
+      },
       {
         $lookup: {
           from: 'users',
@@ -74,6 +77,7 @@ transactions.get('/', validateAdminToken, async (req: Request, res: Response) =>
       },
       {
         $project: {
+          _id: 1,
           dateCreated: 1,
           userName: '$user.username',
           productName: '$product.name',
@@ -86,8 +90,7 @@ transactions.get('/', validateAdminToken, async (req: Request, res: Response) =>
           offerType: '$offer.type',
           offerId: '$offer._id'
         }
-      },
-      { $sort: sort }
+      }
     ])
     .toArray()
     .catch(console.log)
@@ -103,12 +106,47 @@ transactions.get('/', validateAdminToken, async (req: Request, res: Response) =>
   res.json({ data, offset: +offset, limit: +limit, total })
 })
 
-transactions.post('/', validateAdminToken, async (req: Request, res: Response) => {
+transactions.post('/product', validateAdminToken, async (req: Request, res: Response) => {
+  const { productId, userId } = req.body
   const user = req.user as EmployeeToken
-  console.log(user)
+
+  await MongoHelper.connect()
+  const product = await MongoHelper.db.collection('products').findOne({ _id: new ObjectId(productId) })
+  if (product.storeId === user.storeId) {
+    await MongoHelper.db.collection('transactions').insertOne({
+      productId: new ObjectId(productId),
+      userId: new ObjectId(userId),
+      storeId: new ObjectId(user.storeId),
+      dateCreated: new Date()
+    })
+  }
+
+  MongoHelper.client.close()
 
   res.json({
-    a: 1
+    msg: 'ok'
+  })
+})
+
+transactions.post('/offer', validateAdminToken, async (req: Request, res: Response) => {
+  const { offerId, userId } = req.body
+  const user = req.user as EmployeeToken
+
+  await MongoHelper.connect()
+  const offer = await MongoHelper.db.collection('offers').findOne({ _id: new ObjectId(offerId) })
+  if (offer.storeId === user.storeId) {
+    await MongoHelper.db.collection('transactions').insertOne({
+      offerId: new ObjectId(offerId),
+      userId: new ObjectId(userId),
+      storeId: new ObjectId(user.storeId),
+      dateCreated: new Date()
+    })
+  }
+
+  MongoHelper.client.close()
+
+  res.json({
+    msg: 'ok'
   })
 })
 
