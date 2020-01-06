@@ -10,7 +10,7 @@ const app = express()
 app.use(express.json())
 
 app.use(router)
-app.use('/images', express.static(__dirname + '/images'))
+app.use('/uploads', express.static(__dirname + '/images'))
 
 app.listen(PORT, () => {
   app.locals.redis = redis

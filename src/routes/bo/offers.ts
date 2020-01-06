@@ -11,7 +11,7 @@ const offers = Router()
 
 var storage = multer.diskStorage({
   destination: function(req, file, cb) {
-    cb(null, `/home/tolis/Desktop/projects/cflp/cflp-server/src/images`)
+    cb(null, `/home/tolis/Desktop/projects/cflp/cflp-server/src/uploads`)
   },
   filename: function(req, file, cb) {
     const [, type] = file.mimetype.split('/')
