@@ -6,102 +6,91 @@ import { ObjectId } from 'mongodb'
 
 const transactions = Router()
 
-transactions.get('/', validateAdminToken, async (req: Request, res: Response) => {
+transactions.get('/products', validateAdminToken, async (req: Request, res: Response) => {
+  const user = req.user as EmployeeToken
+
   const {
     offset = 0,
     limit = 25,
-    type = 'products',
     searchTerm = '',
-    offerType,
-    from,
-    to,
+    from = null,
+    to = new Date(Date.now() * 2),
     sortBy = 'date:DESC'
   } = req.query
-
   const sort = generateSortFilter(sortBy)
 
-  const lookUp = {
-    $lookup:
-      type === 'products'
-        ? {
-            from: 'products',
-            localField: 'productId',
-            foreignField: '_id',
-            as: 'product'
-          }
-        : {
-            from: 'offers',
-            localField: 'offerId',
-            foreignField: '_id',
-            as: 'offer'
-          }
-  }
-  console.log(sort)
   await MongoHelper.connect()
-  const data = await MongoHelper.db
+  const transactionsData = await MongoHelper.db
     .collection('transactions')
-    .aggregate([
-      {
-        $sort: sort
-      },
-      {
-        $lookup: {
-          from: 'users',
-          localField: 'userId',
-          foreignField: '_id',
-          as: 'user'
-        }
-      },
-      lookUp,
-      { $match: { productId: { $exists: type === 'products' ? 1 : 0 } } },
-      { $limit: +limit + +offset },
-      { $skip: +offset },
-      {
-        $unwind: {
-          path: '$offer',
-          preserveNullAndEmptyArrays: true
-        }
-      },
-
-      {
-        $unwind: {
-          path: '$user',
-          preserveNullAndEmptyArrays: true
-        }
-      },
-      {
-        $unwind: {
-          path: '$product',
-          preserveNullAndEmptyArrays: true
-        }
-      },
-      {
-        $project: {
-          _id: 1,
-          dateCreated: 1,
-          userName: '$user.username',
-          productName: '$product.name',
-          productPrice: '$product.price',
-          productReward: '$product.lpReward',
-          productId: '$product._id',
-          offerName: '$offer.name',
-          offerReward: '$offer.lpReward',
-          offerPrice: '$offer.lpPrice',
-          offerType: '$offer.type',
-          offerId: '$offer._id'
-        }
-      }
-    ])
+    .find({
+      storeId: new ObjectId(user.storeId),
+      dateCreated: { $gt: new Date(from), $lt: new Date(to) }
+    })
+    .sort(sort)
     .toArray()
-    .catch(console.log)
 
   const total = await MongoHelper.db
     .collection('transactions')
-    .find({ productId: { $exists: type === 'products' ? 1 : 0 } })
+    .find({ storeId: new ObjectId(user.storeId) })
     .count()
-    .finally(() => {
-      MongoHelper.client.close()
+    .catch(r => r)
+
+  const ids = transactionsData.map(o => new ObjectId(o.productId))
+  const dates = transactionsData.map(o => o.dateCreated)
+  const products =
+    (await MongoHelper.db
+      .collection('products')
+      .aggregate([{ $match: { _id: { $in: ids }, name: { $regex: searchTerm, $options: 'i' } } }])
+      .toArray()
+      .catch(console.log)) || []
+
+  const data = products.map((o, idx) => ({ ...o, dateCreated: dates[idx] }))
+
+  MongoHelper.client.close()
+
+  res.json({ data, offset: +offset, limit: +limit, total })
+})
+transactions.get('/offers', validateAdminToken, async (req: Request, res: Response) => {
+  const user = req.user as EmployeeToken
+
+  const {
+    offset = 0,
+    limit = 25,
+    searchTerm = '',
+    from = null,
+    to = new Date(Date.now() * 2),
+    sortBy = 'date:DESC'
+  } = req.query
+  const sort = generateSortFilter(sortBy)
+
+  await MongoHelper.connect()
+  const transactionsData = await MongoHelper.db
+    .collection('transactions')
+    .find({
+      storeId: new ObjectId(user.storeId),
+      dateCreated: { $gt: new Date(from), $lt: new Date(to) }
     })
+    .sort(sort)
+    .toArray()
+
+  const total = await MongoHelper.db
+    .collection('transactions')
+    .find({ storeId: new ObjectId(user.storeId) })
+    .count()
+    .catch(r => r)
+
+  const ids = transactionsData.map(o => new ObjectId(o.offerId))
+  const dates = transactionsData.map(o => o.dateCreated)
+  const offers =
+    (await MongoHelper.db
+      .collection('offers')
+      .aggregate([{ $match: { _id: { $in: ids }, name: { $regex: searchTerm, $options: 'i' } } }])
+      .toArray()
+      .catch(console.log)) || []
+
+  const data = offers.map((o, idx) => ({ ...o, dateCreated: dates[idx] }))
+
+  MongoHelper.client.close()
 
   res.json({ data, offset: +offset, limit: +limit, total })
 })
