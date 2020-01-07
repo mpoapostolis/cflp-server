@@ -3,6 +3,8 @@ import { validateAdminToken, generateSortFilter } from '../../utils'
 import { MongoHelper } from '../../mongoHelper'
 import { EmployeeToken } from 'models/users'
 import { ObjectId } from 'mongodb'
+import { addWeeks } from 'date-fns/fp'
+import { subWeeks } from 'date-fns'
 
 const transactions = Router()
 
@@ -13,8 +15,8 @@ transactions.get('/products', validateAdminToken, async (req: Request, res: Resp
     offset = 0,
     limit = 25,
     searchTerm = '',
-    from = null,
-    to = new Date(Date.now() * 2),
+    from = subWeeks(Date.now(), 500).getTime(),
+    to = addWeeks(500)(Date.now()).getTime(),
     sortBy = 'date:DESC'
   } = req.query
   const sort = generateSortFilter(sortBy)
@@ -24,8 +26,11 @@ transactions.get('/products', validateAdminToken, async (req: Request, res: Resp
     .collection('transactions')
     .find({
       storeId: new ObjectId(user.storeId),
-      dateCreated: { $gt: new Date(from), $lt: new Date(to) }
+      dateCreated: { $gte: +from, $lte: +to },
+      productId: { $exists: true }
     })
+    .skip(+offset)
+    .limit(+limit)
     .sort(sort)
     .toArray()
 
@@ -50,6 +55,7 @@ transactions.get('/products', validateAdminToken, async (req: Request, res: Resp
 
   res.json({ data, offset: +offset, limit: +limit, total })
 })
+
 transactions.get('/offers', validateAdminToken, async (req: Request, res: Response) => {
   const user = req.user as EmployeeToken
 
@@ -57,8 +63,8 @@ transactions.get('/offers', validateAdminToken, async (req: Request, res: Respon
     offset = 0,
     limit = 25,
     searchTerm = '',
-    from = null,
-    to = new Date(Date.now() * 2),
+    from = subWeeks(Date.now(), 500).getTime(),
+    to = addWeeks(500)(Date.now()).getTime(),
     sortBy = 'date:DESC'
   } = req.query
   const sort = generateSortFilter(sortBy)
@@ -68,8 +74,11 @@ transactions.get('/offers', validateAdminToken, async (req: Request, res: Respon
     .collection('transactions')
     .find({
       storeId: new ObjectId(user.storeId),
-      dateCreated: { $gt: new Date(from), $lt: new Date(to) }
+      dateCreated: { $gte: +from, $lte: +to },
+      offerId: { $exists: true }
     })
+    .skip(+offset)
+    .limit(+limit)
     .sort(sort)
     .toArray()
 
@@ -81,6 +90,7 @@ transactions.get('/offers', validateAdminToken, async (req: Request, res: Respon
 
   const ids = transactionsData.map(o => new ObjectId(o.offerId))
   const dates = transactionsData.map(o => o.dateCreated)
+  console.log(transactionsData, ids)
   const offers =
     (await MongoHelper.db
       .collection('offers')
