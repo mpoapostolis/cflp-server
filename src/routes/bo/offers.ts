@@ -61,7 +61,7 @@ offers.post('/', validateAdminToken, uploadImg, async (req: Request, res: Respon
   resizeImage(req)
 
   const files: any[] = R.propOr([], 'files', req)
-  const images = files.map(o => `/uploads/${o.filename}`)
+  const images = files.map(o => o.filename)
 
   await MongoHelper.connect()
   const nameAlreadyExists = await MongoHelper.db.collection('offers').findOne({ name, storeId: user.storeId })
@@ -92,7 +92,7 @@ offers.put('/:id', validateAdminToken, uploadImg, async (req: Request, res: Resp
   resizeImage(req)
 
   const files: any[] = R.propOr([], 'files', req)
-  const images = files.map(o => `/uploads/${o.filename}`)
+  const images = files.map(o => o.filename)
 
   await MongoHelper.connect()
   await MongoHelper.db.collection('offers').updateOne(
