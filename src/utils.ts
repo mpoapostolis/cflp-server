@@ -1,6 +1,9 @@
 import * as jwt from 'jsonwebtoken'
 import { NextFunction, Response, Request } from 'express'
 import { EmployeeToken } from 'models/users'
+import * as multer from 'multer'
+import * as mkdirp from 'mkdirp'
+import * as crypto from 'crypto'
 
 export function generateToken(obj: Record<string, any>, duration: string, key: string) {
   return jwt.sign(obj, key, { expiresIn: duration })
@@ -26,7 +29,6 @@ export function validateClientToken(req: Request, res: Response, next: NextFunct
   jwt.verify(token, process.env['TOKEN'], (err, user) => {
     if (err) return res.sendStatus(403)
     req.user = user
-    console.log(user)
     next()
   })
 }
@@ -37,3 +39,16 @@ export function generateSortFilter(sortBy: string) {
   const k = key === 'date' ? '_id' : key
   return { [k]: direction }
 }
+
+const storage = multer.diskStorage({
+  destination: function(_req, _file, cb) {
+    mkdirp.sync(process.env['UPLOAD_PATH'])
+    cb(null, process.env['UPLOAD_PATH'])
+  },
+  filename: function(_req, file, cb) {
+    const [, type] = file.mimetype.split('/')
+    cb(null, `${crypto.randomBytes(18).toString('hex')}.${type}`)
+  }
+})
+
+export const uploadImg = multer({ storage }).array('image')

@@ -90,7 +90,6 @@ transactions.get('/offers', validateAdminToken, async (req: Request, res: Respon
 
   const ids = transactionsData.map(o => new ObjectId(o.offerId))
   const dates = transactionsData.map(o => o.dateCreated)
-  console.log(transactionsData, ids)
   const offers =
     (await MongoHelper.db
       .collection('offers')

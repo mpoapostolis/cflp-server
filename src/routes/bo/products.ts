@@ -1,27 +1,11 @@
 import { Router, Request, Response } from 'express'
-import { validateAdminToken, generateSortFilter } from '../../utils'
+import { validateAdminToken, generateSortFilter, uploadImg } from '../../utils'
 import { EmployeeToken } from 'models/users'
 import { MongoHelper } from '../../mongoHelper'
-import * as multer from 'multer'
 import * as R from 'ramda'
-import * as crypto from 'crypto'
 import { ObjectID } from 'bson'
 import * as fs from 'fs'
 const products = Router()
-import * as mkdirp from 'mkdirp'
-
-const storage = multer.diskStorage({
-  destination: function(req, file, cb) {
-    mkdirp.sync(process.env['UPLOAD_PATH'])
-    cb(null, process.env['UPLOAD_PATH'])
-  },
-  filename: function(req, file, cb) {
-    const [, type] = file.mimetype.split('/')
-    cb(null, `${crypto.randomBytes(18).toString('hex')}.${type}`)
-  }
-})
-
-const upload = multer({ storage })
 
 products.get('/', validateAdminToken, async (req: Request, res: Response) => {
   const { offset = 0, limit = 25, searchTerm = '', sortBy = 'date:DESC' } = req.query
@@ -61,7 +45,7 @@ products.get('/:id', validateAdminToken, async (req: Request, res: Response) => 
   res.json(product)
 })
 
-products.post('/', validateAdminToken, upload.array('image'), async (req: Request, res: Response) => {
+products.post('/', validateAdminToken, uploadImg, async (req: Request, res: Response) => {
   const { lpPrice = 0, lpReward = 0, price = 0, name = '' } = JSON.parse(req.body.infos)
   const user = req.user as EmployeeToken
 
@@ -93,7 +77,7 @@ products.post('/', validateAdminToken, upload.array('image'), async (req: Reques
   res.json(data.ops[0])
 })
 
-products.put('/:id', validateAdminToken, upload.array('image'), async (req: Request, res: Response) => {
+products.put('/:id', validateAdminToken, uploadImg, async (req: Request, res: Response) => {
   const { lpReward, price, lpPrice, name } = JSON.parse(req.body.infos)
   const user = req.user as EmployeeToken
 
