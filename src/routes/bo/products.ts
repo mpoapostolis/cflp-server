@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express'
-import { validateAdminToken, generateSortFilter, uploadImg } from '../../utils'
+import { validateAdminToken, generateSortFilter, uploadImg, resizeImage } from '../../utils'
 import { EmployeeToken } from 'models/users'
 import { MongoHelper } from '../../mongoHelper'
 import * as R from 'ramda'
@@ -54,6 +54,7 @@ products.post('/', validateAdminToken, uploadImg, async (req: Request, res: Resp
   if (+price < 0 || !Boolean(price)) error['price'] = 'price cant be empty or have negative value'
   if (!Boolean(name)) error['name'] = 'name cant be empty'
   if (!R.isEmpty(error)) return res.status(400).json({ error })
+  resizeImage(req)
 
   const files: any[] = R.propOr([], 'files', req)
   const images = files.map(o => `/uploads/${o.filename}`)
@@ -86,6 +87,7 @@ products.put('/:id', validateAdminToken, uploadImg, async (req: Request, res: Re
   if (+price < 0 || !Boolean(price)) error['price'] = 'price cant be empty or have negative value'
   if (!Boolean(name)) error['name'] = 'name cant be empty'
   if (!R.isEmpty(error)) return res.status(400).json({ error })
+  resizeImage(req)
 
   const files: any[] = R.propOr([], 'files', req)
   const images = files.map(o => `/uploads/${o.filename}`)
@@ -118,7 +120,7 @@ products.delete('/:id/images', validateAdminToken, async (req: Request, res: Res
     .updateOne({ _id: new ObjectID(req.params.id) }, { $pull: { images: { $in: paths } } })
 
   paths.forEach(path => {
-    fs.unlink(`/home/tolis/Desktop/projects/cflp/cflp-server/src/${path}`, err => {})
+    fs.unlink(`${process.env['UPLOAD_PATH']}/${path}`, err => {})
   })
   MongoHelper.client.close()
 

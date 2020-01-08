@@ -4,6 +4,10 @@ import { EmployeeToken } from 'models/users'
 import * as multer from 'multer'
 import * as mkdirp from 'mkdirp'
 import * as crypto from 'crypto'
+import * as sharp from 'sharp'
+import * as fs from 'fs'
+import * as path from 'path'
+import * as R from 'ramda'
 
 export function generateToken(obj: Record<string, any>, duration: string, key: string) {
   return jwt.sign(obj, key, { expiresIn: duration })
@@ -52,3 +56,14 @@ const storage = multer.diskStorage({
 })
 
 export const uploadImg = multer({ storage }).array('image')
+
+export function resizeImage(req: Request) {
+  const files: any[] = R.propOr([], 'files', req)
+  files.forEach(async o => {
+    await fs.unlinkSync(req.file.path)
+    await sharp(o.path)
+      .resize(500)
+      .jpeg({ quality: 50 })
+      .toFile(path.resolve(o.destination, 'resized', o.filename))
+  })
+}

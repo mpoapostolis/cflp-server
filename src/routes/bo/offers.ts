@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express'
-import { validateAdminToken, generateSortFilter, uploadImg } from '../../utils'
+import { validateAdminToken, generateSortFilter, uploadImg, resizeImage } from '../../utils'
 import { EmployeeToken } from 'models/users'
 import { MongoHelper } from '../../mongoHelper'
 import * as R from 'ramda'
@@ -58,6 +58,7 @@ offers.post('/', validateAdminToken, uploadImg, async (req: Request, res: Respon
   if (!['ACTIVE', 'DRAFT'].includes(status)) error['status'] = 'status must be ACTIVE or DRAFT'
   if (!Boolean(name)) error['name'] = 'name cant be empty'
   if (!R.isEmpty(error)) return res.status(400).json({ error })
+  resizeImage(req)
 
   const files: any[] = R.propOr([], 'files', req)
   const images = files.map(o => `/uploads/${o.filename}`)
@@ -88,6 +89,7 @@ offers.put('/:id', validateAdminToken, uploadImg, async (req: Request, res: Resp
   if (!['ACTIVE', 'DRAFT'].includes(status)) error['status'] = 'status must be ACTIVE or DRAFT'
   if (!Boolean(name)) error['name'] = 'name cant be empty'
   if (!R.isEmpty(error)) return res.status(400).json({ error })
+  resizeImage(req)
 
   const files: any[] = R.propOr([], 'files', req)
   const images = files.map(o => `/uploads/${o.filename}`)
