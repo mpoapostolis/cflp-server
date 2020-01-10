@@ -46,8 +46,8 @@ export function generateSortFilter(sortBy: string) {
 
 const storage = multer.diskStorage({
   destination: function(_req, _file, cb) {
-    mkdirp.sync(process.env['UPLOAD_PATH'])
-    cb(null, process.env['UPLOAD_PATH'])
+    mkdirp.sync(`${process.env['UPLOAD_PATH']}/tmp`)
+    cb(null, `${process.env['UPLOAD_PATH']}/tmp`)
   },
   filename: function(_req, file, cb) {
     const [, type] = file.mimetype.split('/')
@@ -59,11 +59,17 @@ export const uploadImg = multer({ storage }).array('image')
 
 export function resizeImage(req: Request) {
   const files: any[] = R.propOr([], 'files', req)
+
   files.forEach(async o => {
-    await fs.unlinkSync(req.file.path)
     await sharp(o.path)
-      .resize(500)
-      .jpeg({ quality: 50 })
-      .toFile(path.resolve(o.destination, 'resized', o.filename))
+      .resize(800)
+      .jpeg({ quality: 60 })
+      .toFile(path.resolve(process.env['UPLOAD_PATH'], o.filename))
+
+    await fs.unlinkSync(o.path)
   })
+}
+
+export function getFileNameFromPath(paths: string[]) {
+  return (paths = paths.map(o => o.replace('/uploads/', '')))
 }

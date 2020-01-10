@@ -5,7 +5,6 @@ import * as bcrypt from 'bcrypt'
 import * as R from 'ramda'
 import * as jwt from 'jsonwebtoken'
 import { generateToken } from '../utils'
-import { ObjectID } from 'mongodb'
 
 const auth = Router()
 

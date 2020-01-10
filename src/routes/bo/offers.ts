@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express'
-import { validateAdminToken, generateSortFilter, uploadImg, resizeImage } from '../../utils'
+import { validateAdminToken, generateSortFilter, uploadImg, resizeImage, getFileNameFromPath } from '../../utils'
 import { EmployeeToken } from 'models/users'
 import { MongoHelper } from '../../mongoHelper'
 import * as R from 'ramda'
@@ -61,7 +61,7 @@ offers.post('/', validateAdminToken, uploadImg, async (req: Request, res: Respon
   resizeImage(req)
 
   const files: any[] = R.propOr([], 'files', req)
-  const images = files.map(o => o.filename)
+  const images = files.map(o => `/uploads/${o.filename}`)
 
   await MongoHelper.connect()
   const nameAlreadyExists = await MongoHelper.db.collection('offers').findOne({ name, storeId: user.storeId })
@@ -92,7 +92,7 @@ offers.put('/:id', validateAdminToken, uploadImg, async (req: Request, res: Resp
   resizeImage(req)
 
   const files: any[] = R.propOr([], 'files', req)
-  const images = files.map(o => o.filename)
+  const images = files.map(o => `/uploads/${o.filename}`)
 
   await MongoHelper.connect()
   await MongoHelper.db.collection('offers').updateOne(
@@ -121,9 +121,10 @@ offers.delete('/:id/images', validateAdminToken, async (req: Request, res: Respo
     .collection('offers')
     .updateOne({ _id: new ObjectID(req.params.id) }, { $pull: { images: { $in: paths } } })
 
-  paths.forEach(path => {
-    fs.unlink(`/home/tolis/Desktop/projects/cflp/cflp-server/src/${path}`, err => {})
+  getFileNameFromPath(paths).forEach(fileName => {
+    fs.unlink(`${process.env['UPLOAD_PATH']}/${fileName}`, err => {})
   })
+
   MongoHelper.client.close()
 
   res.json(data)
