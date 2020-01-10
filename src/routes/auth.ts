@@ -2,12 +2,10 @@ import { Router, Request, Response } from 'express'
 import { MongoHelper } from '../mongoHelper'
 import { User } from '../models/users'
 import * as bcrypt from 'bcrypt'
-import * as dotenv from 'dotenv'
 import * as R from 'ramda'
 import { generateToken } from '../utils'
 
 const auth = Router()
-dotenv.config()
 
 const getEmployeeData = (data: User) =>
   R.pick(
@@ -69,7 +67,7 @@ auth.post('/login', async (req: Request, res: Response) => {
           })
         const infos = R.pick(['_id', 'storeId'], user)
         const token = await generateToken(infos, '10s', process.env['TOKEN'])
-        const refreshToken = await generateToken(infos, '1w', process.env['RTOKEN'])
+        const refreshToken = await generateToken(infos, '1w', process.env['TOKEN'])
         const usesInfos = origin === 'admin' ? getEmployeeData(user) : getClientData(user)
         res.status(200).json({
           ...usesInfos,
