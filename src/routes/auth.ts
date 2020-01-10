@@ -3,7 +3,9 @@ import { MongoHelper } from '../mongoHelper'
 import { User } from '../models/users'
 import * as bcrypt from 'bcrypt'
 import * as R from 'ramda'
+import * as jwt from 'jsonwebtoken'
 import { generateToken } from '../utils'
+import { ObjectID } from 'mongodb'
 
 const auth = Router()
 
@@ -84,6 +86,22 @@ auth.post('/login', async (req: Request, res: Response) => {
     })
   }
   MongoHelper.client.close()
+})
+
+auth.post('/refresh-token', (req: Request, res: Response) => {
+  const { refreshToken } = req.body
+
+  jwt.verify(refreshToken, process.env['TOKEN'], async (err, infos) => {
+    if (err) return res.status(403).json({ error: 'invalid  refresh token' })
+
+    const refreshToken = await generateToken(R.pick(['_id', 'storeId'], infos), '1w', process.env['TOKEN'])
+    const token = await generateToken(R.pick(['_id', 'storeId'], infos), '10s', process.env['TOKEN'])
+
+    res.json({
+      token,
+      refreshToken
+    })
+  })
 })
 
 export default auth
