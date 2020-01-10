@@ -68,7 +68,7 @@ auth.post('/login', async (req: Request, res: Response) => {
             }
           })
         const infos = R.pick(['_id', 'storeId'], user)
-        const token = await generateToken(infos, '10s', process.env['TOKEN'])
+        const token = await generateToken(infos, '15m', process.env['TOKEN'])
         const refreshToken = await generateToken(infos, '1w', process.env['TOKEN'])
         const usesInfos = origin === 'admin' ? getEmployeeData(user) : getClientData(user)
         res.status(200).json({
@@ -95,7 +95,7 @@ auth.post('/refresh-token', (req: Request, res: Response) => {
     if (err) return res.status(403).json({ error: 'invalid  refresh token' })
 
     const refreshToken = await generateToken(R.pick(['_id', 'storeId'], infos), '1w', process.env['TOKEN'])
-    const token = await generateToken(R.pick(['_id', 'storeId'], infos), '10s', process.env['TOKEN'])
+    const token = await generateToken(R.pick(['_id', 'storeId'], infos), '15m', process.env['TOKEN'])
 
     res.json({
       token,
