@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express'
-import { validateAdminToken, generateSortFilter } from '../../utils'
-import { EmployeeToken } from 'models/users'
-import { MongoHelper } from '../../mongoHelper'
+import { validateAdminToken, generateSortFilter } from '../../util/utils'
+import { EmployeeToken } from 'database/models/users'
+import { MongoHelper } from '../../config/mongoHelper'
 import { ObjectID } from 'bson'
 const users = Router()
 

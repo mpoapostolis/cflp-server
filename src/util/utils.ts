@@ -1,6 +1,6 @@
 import * as jwt from 'jsonwebtoken'
 import { NextFunction, Response, Request } from 'express'
-import { EmployeeToken } from 'models/users'
+import { EmployeeToken } from 'database/models/users'
 import * as multer from 'multer'
 import * as mkdirp from 'mkdirp'
 import * as crypto from 'crypto'

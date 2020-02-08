@@ -1,10 +1,10 @@
 import { Router, Request, Response } from 'express'
-import { MongoHelper } from '../mongoHelper'
-import { User } from '../models/users'
+import { MongoHelper } from '../config/mongoHelper'
+import { User } from '../database/models/users'
 import * as bcrypt from 'bcrypt'
 import * as R from 'ramda'
 import * as jwt from 'jsonwebtoken'
-import { generateToken } from '../utils'
+import { generateToken } from '../util/utils'
 
 const auth = Router()
 

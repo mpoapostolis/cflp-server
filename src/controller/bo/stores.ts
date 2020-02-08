@@ -1,8 +1,8 @@
 import { Router, Request, Response } from 'express'
 // import { redis } from '../..'
-import { validateAdminToken } from '../../utils'
-import { ClientToken } from 'models/users'
-import { MongoHelper } from '../../mongoHelper'
+import { validateAdminToken } from '../../util/utils'
+import { ClientToken } from 'database/models/users'
+import { MongoHelper } from '../../config/mongoHelper'
 
 const stores = Router()
 

@@ -1,4 +1,4 @@
-import router from './routes'
+import router from './controller'
 import * as express from 'express'
 import * as morgan from 'morgan'
 import * as dotenv from 'dotenv'
