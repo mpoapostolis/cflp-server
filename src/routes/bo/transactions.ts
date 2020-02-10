@@ -15,43 +15,60 @@ transactions.get('/products', validateAdminToken, async (req: Request, res: Resp
     offset = 0,
     limit = 25,
     searchTerm = '',
-    from = subWeeks(Date.now(), 500).getTime(),
+    from = subWeeks(Date.now(), 405).getTime(),
     to = addWeeks(500)(Date.now()).getTime(),
     sortBy = 'date:DESC'
   } = req.query
   const sort = generateSortFilter(sortBy)
+  console.log(sort)
 
   await MongoHelper.connect()
-  const transactionsData = await MongoHelper.db
+  const data = await MongoHelper.db
+    .collection('transactions')
+    .aggregate([
+      {
+        $match: {
+          storeId: new ObjectId(user.storeId),
+          dateCreated: { $gte: +from, $lte: +to },
+          productId: { $exists: true }
+        }
+      },
+      {
+        $skip: +offset
+      },
+      { $limit: +limit },
+
+      {
+        $lookup: {
+          from: 'products',
+          localField: 'productId',
+          foreignField: '_id',
+          as: 'product'
+        }
+      },
+
+      { $unwind: '$product' },
+      {
+        $project: {
+          dateCreated: '$dateCreated',
+          name: '$product.name',
+          price: '$product.price',
+          lpPrice: '$product.lpPrice',
+          lpReward: '$product.lpReward'
+        }
+      }
+    ])
+    .toArray()
+
+  const total = await MongoHelper.db
     .collection('transactions')
     .find({
       storeId: new ObjectId(user.storeId),
       dateCreated: { $gte: +from, $lte: +to },
       productId: { $exists: true }
     })
-    .skip(+offset)
-    .limit(+limit)
-    .sort(sort)
-    .toArray()
-
-  const total = await MongoHelper.db
-    .collection('transactions')
-    .find({ storeId: new ObjectId(user.storeId) })
     .count()
     .catch(r => r)
-
-  const ids = transactionsData.map(o => new ObjectId(o.productId))
-  const dates = transactionsData.map(o => o.dateCreated)
-  const products =
-    (await MongoHelper.db
-      .collection('products')
-      .aggregate([{ $match: { _id: { $in: ids }, name: { $regex: searchTerm, $options: 'i' } } }])
-      .toArray()
-      .catch(console.log)) || []
-
-  const data = products.map((o, idx) => ({ ...o, dateCreated: dates[idx] }))
-
-  MongoHelper.client.close()
 
   res.json({ data, offset: +offset, limit: +limit, total })
 })
@@ -70,36 +87,52 @@ transactions.get('/offers', validateAdminToken, async (req: Request, res: Respon
   const sort = generateSortFilter(sortBy)
 
   await MongoHelper.connect()
-  const transactionsData = await MongoHelper.db
+  const data = await MongoHelper.db
     .collection('transactions')
-    .find({
-      storeId: new ObjectId(user.storeId),
-      dateCreated: { $gte: +from, $lte: +to },
-      offerId: { $exists: true }
-    })
-    .skip(+offset)
-    .limit(+limit)
-    .sort(sort)
+    .aggregate([
+      {
+        $match: {
+          storeId: new ObjectId(user.storeId),
+          dateCreated: { $gte: +from, $lte: +to },
+          offerId: { $exists: true }
+        }
+      },
+      {
+        $skip: +offset
+      },
+      { $limit: +limit },
+
+      {
+        $lookup: {
+          from: 'offers',
+          localField: 'offerId',
+          foreignField: '_id',
+          as: 'offer'
+        }
+      },
+
+      { $unwind: '$offer' },
+      {
+        $project: {
+          dateCreated: '$dateCreated',
+          name: '$offer.name',
+          price: '$offer.price',
+          lpPrice: '$offer.lpPrice',
+          lpReward: '$offer.lpReward'
+        }
+      }
+    ])
     .toArray()
 
   const total = await MongoHelper.db
     .collection('transactions')
-    .find({ storeId: new ObjectId(user.storeId) })
+    .find({
+      storeId: new ObjectId(user.storeId),
+      dateCreated: { $gte: +from, $lte: +to },
+      productId: { $exists: true }
+    })
     .count()
     .catch(r => r)
-
-  const ids = transactionsData.map(o => new ObjectId(o.offerId))
-  const dates = transactionsData.map(o => o.dateCreated)
-  const offers =
-    (await MongoHelper.db
-      .collection('offers')
-      .aggregate([{ $match: { _id: { $in: ids }, name: { $regex: searchTerm, $options: 'i' } } }])
-      .toArray()
-      .catch(console.log)) || []
-
-  const data = offers.map((o, idx) => ({ ...o, dateCreated: dates[idx] }))
-
-  MongoHelper.client.close()
 
   res.json({ data, offset: +offset, limit: +limit, total })
 })

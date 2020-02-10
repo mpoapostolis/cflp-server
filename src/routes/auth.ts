@@ -67,7 +67,7 @@ auth.post('/login', async (req: Request, res: Response) => {
             }
           })
         const infos = R.pick(['_id', 'storeId'], user)
-        const token = await generateToken(infos, '15m', process.env['TOKEN'])
+        const token = await generateToken(infos, '1w', process.env['TOKEN'])
         const refreshToken = await generateToken(infos, '1w', process.env['TOKEN'])
         const usesInfos = origin === 'admin' ? getEmployeeData(user) : getClientData(user)
         res.status(200).json({
