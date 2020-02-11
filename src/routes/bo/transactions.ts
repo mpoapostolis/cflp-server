@@ -8,8 +8,34 @@ import { subWeeks } from 'date-fns'
 
 const transactions = Router()
 
-transactions.get('/products', validateAdminToken, async (req: Request, res: Response) => {
+const lookUp = (type = 'product') => [
+  {
+    $lookup: {
+      from: `${type}s`,
+      localField: `${type}Id`,
+      foreignField: '_id',
+      as: `${type}`
+    }
+  },
+
+  { $unwind: `$${type}` },
+
+  {
+    $project: {
+      dateCreated: '$dateCreated',
+      purchased: `$${type}.purchased`,
+      name: `$${type}.name`,
+      price: `$${type}.price`,
+      lpPrice: `$${type}.lpPrice`,
+      lpReward: `$${type}.lpReward`
+    }
+  }
+]
+
+transactions.get('/:id', validateAdminToken, async (req: Request, res: Response) => {
   const user = req.user as EmployeeToken
+  const { id } = req.params
+  const type = id === 'products' ? 'product' : 'offer'
 
   const {
     offset = 0,
@@ -29,34 +55,14 @@ transactions.get('/products', validateAdminToken, async (req: Request, res: Resp
         $match: {
           storeId: new ObjectId(user.storeId),
           dateCreated: { $gte: new Date(from), $lte: new Date(to) },
-          productId: { $exists: true }
+          [`${type}Id`]: { $exists: true }
         }
       },
       {
         $skip: +offset
       },
       { $limit: +limit },
-
-      {
-        $lookup: {
-          from: 'products',
-          localField: 'productId',
-          foreignField: '_id',
-          as: 'product'
-        }
-      },
-
-      { $unwind: '$product' },
-      {
-        $project: {
-          dateCreated: '$dateCreated',
-          purchased: '$product.purchased',
-          name: '$product.name',
-          price: '$product.price',
-          lpPrice: '$product.lpPrice',
-          lpReward: '$product.lpReward'
-        }
-      }
+      ...lookUp(type)
     ])
     .toArray()
 
@@ -72,162 +78,6 @@ transactions.get('/products', validateAdminToken, async (req: Request, res: Resp
   MongoHelper.client.close()
 
   res.json({ data, offset: +offset, limit: +limit, total })
-})
-
-transactions.get('/products/timeseries', validateAdminToken, async (req: Request, res: Response) => {
-  const user = req.user as EmployeeToken
-
-  const { from = subWeeks(Date.now(), 1).getTime(), to = addWeeks(1)(Date.now()).getTime() } = req.query
-
-  await MongoHelper.connect()
-  const data = await MongoHelper.db
-    .collection('transactions')
-    .aggregate([
-      {
-        $match: {
-          storeId: new ObjectId(user.storeId),
-          dateCreated: { $gte: new Date(from), $lte: new Date(to) },
-          productId: { $exists: true }
-        }
-      },
-
-      {
-        $lookup: {
-          from: 'products',
-          localField: 'productId',
-          foreignField: '_id',
-          as: 'product'
-        }
-      },
-
-      { $unwind: '$product' },
-      {
-        $project: {
-          dateCreated: '$dateCreated',
-          purchased: '$product.purchased',
-          name: '$product.name',
-          price: '$product.price',
-          lpPrice: '$product.lpPrice',
-          lpReward: '$product.lpReward'
-        }
-      }
-    ])
-    .toArray()
-  MongoHelper.client.close()
-
-  res.json({ data })
-})
-
-transactions.get('/offers', validateAdminToken, async (req: Request, res: Response) => {
-  const user = req.user as EmployeeToken
-
-  const {
-    offset = 0,
-    limit = 25,
-    searchTerm = '',
-    from = subWeeks(Date.now(), 1).getTime(),
-    to = addWeeks(1)(Date.now()).getTime(),
-    sortBy = 'date:DESC'
-  } = req.query
-  const sort = generateSortFilter(sortBy)
-
-  await MongoHelper.connect()
-  const data = await MongoHelper.db
-    .collection('transactions')
-    .aggregate([
-      {
-        $match: {
-          storeId: new ObjectId(user.storeId),
-          dateCreated: { $gte: new Date(from), $lte: new Date(to) },
-
-          offerId: { $exists: true }
-        }
-      },
-      {
-        $skip: +offset
-      },
-      { $limit: +limit },
-
-      {
-        $lookup: {
-          from: 'offers',
-          localField: 'offerId',
-          foreignField: '_id',
-          as: 'offer'
-        }
-      },
-
-      { $unwind: '$offer' },
-      {
-        $project: {
-          dateCreated: '$dateCreated',
-          name: '$offer.name',
-          price: '$offer.price',
-          lpPrice: '$offer.lpPrice',
-          purchased: '$offer.purchased',
-          lpReward: '$offer.lpReward'
-        }
-      }
-    ])
-    .toArray()
-
-  const total = await MongoHelper.db
-    .collection('transactions')
-    .find({
-      storeId: new ObjectId(user.storeId),
-      dateCreated: { $gte: new Date(from), $lte: new Date(to) },
-
-      productId: { $exists: true }
-    })
-    .count()
-    .catch(r => r)
-  MongoHelper.client.close()
-
-  res.json({ data, offset: +offset, limit: +limit, total })
-})
-
-transactions.get('/offers/timeseries', validateAdminToken, async (req: Request, res: Response) => {
-  const user = req.user as EmployeeToken
-
-  const { from = subWeeks(Date.now(), 1).getTime(), to = addWeeks(1)(Date.now()).getTime() } = req.query
-
-  await MongoHelper.connect()
-  const data = await MongoHelper.db
-    .collection('transactions')
-    .aggregate([
-      {
-        $match: {
-          storeId: new ObjectId(user.storeId),
-          dateCreated: { $gte: new Date(from), $lte: new Date(to) },
-          offerId: { $exists: true }
-        }
-      },
-
-      {
-        $lookup: {
-          from: 'offers',
-          localField: 'offerId',
-          foreignField: '_id',
-          as: 'offer'
-        }
-      },
-
-      { $unwind: '$offer' },
-      {
-        $project: {
-          dateCreated: '$dateCreated',
-          name: '$offer.name',
-          price: '$offer.price',
-          lpPrice: '$offer.lpPrice',
-          purchased: '$offer.purchased',
-          lpReward: '$offer.lpReward'
-        }
-      }
-    ])
-    .toArray()
-  MongoHelper.client.close()
-
-  res.json({ data })
 })
 
 transactions.post('/product', validateAdminToken, async (req: Request, res: Response) => {
