@@ -51,7 +51,7 @@ offers.get('/:id', validateAdminToken, async (req: Request, res: Response) => {
 })
 
 offers.post('/', validateAdminToken, uploadImg, async (req: Request, res: Response) => {
-  const { name, description = '', status, loyaltyPoints } = JSON.parse(req.body.infos)
+  const { name, description = '', type, status, lpPrice, lpReward } = JSON.parse(req.body.infos)
   const user = req.user as EmployeeToken
 
   const error = {}
@@ -73,7 +73,9 @@ offers.post('/', validateAdminToken, uploadImg, async (req: Request, res: Respon
     description,
     status,
     images,
-    loyaltyPoints,
+    type,
+    lpPrice,
+    lpReward,
     storeId: user.storeId
   })
   MongoHelper.client.close()
@@ -82,7 +84,7 @@ offers.post('/', validateAdminToken, uploadImg, async (req: Request, res: Respon
 })
 
 offers.put('/:id', validateAdminToken, uploadImg, async (req: Request, res: Response) => {
-  const { name, description = '', status, discounts = [] } = JSON.parse(req.body.infos)
+  const { name, description = '', type, lpPrice, lpReward, status, discounts = [] } = JSON.parse(req.body.infos)
   const user = req.user as EmployeeToken
 
   const error = {}
@@ -103,6 +105,9 @@ offers.put('/:id', validateAdminToken, uploadImg, async (req: Request, res: Resp
         name,
         description,
         status,
+        type,
+        lpPrice,
+        lpReward,
         discounts,
         storeId: user.storeId
       }

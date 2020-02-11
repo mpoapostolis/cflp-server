@@ -10,3 +10,11 @@ type Store = {
   description: string
   adress: string
 }
+
+const x = {
+  name: 'toMagazim',
+  coords: [1, 2],
+  images: [],
+  description: '',
+  adress: ''
+}
