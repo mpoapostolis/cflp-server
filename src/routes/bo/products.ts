@@ -48,7 +48,6 @@ products.get('/:id', validateAdminToken, async (req: Request, res: Response) => 
 products.post('/', validateAdminToken, uploadImg, async (req: Request, res: Response) => {
   const { lpReward = 0, price = 0, name = '' } = JSON.parse(req.body.infos)
   const user = req.user as EmployeeToken
-  console.log(lpReward)
   const error = {}
   if (+lpReward < 0 || (lpReward !== 0 && !Boolean(lpReward)))
     error['lpReward'] = 'loyalty points cant be empty or have negative value'

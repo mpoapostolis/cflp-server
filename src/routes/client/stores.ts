@@ -1,30 +1,21 @@
 import { Router, Request, Response } from 'express'
-// import { redis } from '../..'
-import { validateAdminToken } from '../../utils'
+import { redis } from '../..'
+import { validateAdminToken, validateClientToken } from '../../utils'
 import { ClientToken } from 'models/users'
 import { MongoHelper } from '../../mongoHelper'
+import { RedisClient } from 'redis'
+import { exec } from 'child_process'
 
 const stores = Router()
 
-stores.get('/', validateAdminToken, async (req: Request, res: Response) => {
-  const { offset = 0, limit = 25, lat = 0, lng = 0, id = '' } = req.query
+stores.get('/', async (req: Request, res: Response) => {
+  const { lat = 0, gender, age, lng = 0, id = '' } = req.query
   const user = req.user as ClientToken
-  // redis.GEOADD('key', lat, lng, id)
-  // setTimeout(() => {
-  //   redis.ZREM('key', id)
-  // }, 30000)
-  await MongoHelper.connect()
-  const data = await MongoHelper.db
-    .collection('stores')
-    .find({ userId: user._id })
-    .skip(+offset)
-    .limit(+limit)
-    .toArray()
-    .catch(r => r)
-    .finally(() => {
-      MongoHelper.client.close()
-    })
-  res.send({ data })
+
+  redis.GEOADD('near', lat, lng, `${gender}_${age}_${id}`)
+  exec(`sleep 1000; redis-cli zrem near f_25_${id}`)
+
+  res.send('ok')
 })
 
 stores.get('/:id', async (req: Request, res: Response) => {

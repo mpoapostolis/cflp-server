@@ -5,6 +5,7 @@ import { EmployeeToken } from 'models/users'
 import { ObjectId } from 'mongodb'
 import { addWeeks } from 'date-fns/fp'
 import { subWeeks } from 'date-fns'
+import { redis } from '../../index'
 
 const analytics = Router()
 
@@ -141,6 +142,20 @@ analytics.get('/revenue', validateAdminToken, async (req: Request, res: Response
     .toArray()
   MongoHelper.client.close()
   res.json({ revenue: data[0]?.revenue ?? 0 })
+})
+
+analytics.get('/near', validateAdminToken, async (req: Request, res: Response) => {
+  const { near = 2 } = req.query
+  redis.GEORADIUS('near', 0, 0, 500000, 'km', (err, data) => {
+    res.json({ data })
+  })
+})
+
+analytics.get('/near/total', validateAdminToken, async (req: Request, res: Response) => {
+  const { near = 2 } = req.query
+  redis.GEORADIUS('near', 0, 0, 500000, 'km', (err, data) => {
+    res.json({ total: data.length })
+  })
 })
 
 export default analytics

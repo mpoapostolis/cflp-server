@@ -1,5 +1,4 @@
 import { Router } from 'express'
-import stores from './stores'
 import transactions from './transactions'
 import users from './users'
 import products from './products'
@@ -8,7 +7,6 @@ import analytics from './analytics'
 
 const boRouter = Router()
 
-boRouter.use('/stores', stores)
 boRouter.use('/offers', offers)
 boRouter.use('/transactions', transactions)
 boRouter.use('/users', users)
