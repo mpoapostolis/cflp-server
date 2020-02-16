@@ -63,6 +63,7 @@ const lookUp = (type = 'product') => [
     $group: {
       _id: `$${type}.name`,
       name: { $first: `$${type}.name` },
+      price: { $first: `$${type}.price` },
       purchased: {
         $sum: 1
       }
@@ -72,6 +73,7 @@ const lookUp = (type = 'product') => [
   {
     $project: {
       _id: 0,
+      price: 1,
       name: 1,
       purchased: 1
     }
@@ -100,6 +102,45 @@ analytics.get('/aggregation/:type', validateAdminToken, async (req: Request, res
     .toArray()
   MongoHelper.client.close()
   res.json({ data })
+})
+
+analytics.get('/revenue', validateAdminToken, async (req: Request, res: Response) => {
+  const user = req.user as EmployeeToken
+  const { from = subWeeks(Date.now(), 1).getTime(), to = addWeeks(1)(Date.now()).getTime() } = req.query
+
+  await MongoHelper.connect()
+  const data = await MongoHelper.db
+    .collection('transactions')
+    .aggregate([
+      {
+        $match: {
+          storeId: new ObjectId(user.storeId),
+          dateCreated: { $gte: new Date(from), $lte: new Date(to) },
+          productId: { $exists: true }
+        }
+      },
+      {
+        $lookup: {
+          from: `products`,
+          localField: `productId`,
+          foreignField: '_id',
+          as: `product`
+        }
+      },
+      { $unwind: `$product` },
+
+      {
+        $group: {
+          _id: null,
+          revenue: {
+            $sum: '$product.price'
+          }
+        }
+      }
+    ])
+    .toArray()
+  MongoHelper.client.close()
+  res.json({ revenue: data[0]?.revenue ?? 0 })
 })
 
 export default analytics
