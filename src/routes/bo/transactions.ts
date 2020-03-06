@@ -3,8 +3,7 @@ import { validateAdminToken, generateSortFilter } from '../../utils'
 import { MongoHelper } from '../../mongoHelper'
 import { EmployeeToken } from 'models/users'
 import { ObjectId } from 'mongodb'
-import { addWeeks } from 'date-fns/fp'
-import { subWeeks } from 'date-fns'
+import { subWeeks, addDays } from 'date-fns'
 
 const transactions = Router()
 
@@ -42,11 +41,12 @@ transactions.get('/:id', validateAdminToken, async (req: Request, res: Response)
     limit = 25,
     searchTerm = '',
     from = subWeeks(Date.now(), 1).getTime(),
-    to = addWeeks(2)(Date.now()),
+    to = addDays(Date.now(), 1).getTime(),
     sortBy = 'date:DESC'
   } = req.query
   const sort = generateSortFilter(sortBy)
 
+  console.log(from, to)
   await MongoHelper.connect()
   const data = await MongoHelper.db
     .collection('transactions')
@@ -54,10 +54,11 @@ transactions.get('/:id', validateAdminToken, async (req: Request, res: Response)
       {
         $match: {
           storeId: new ObjectId(user.storeId),
-          dateCreated: { $gte: new Date(from), $lte: new Date(to) },
+          dateCreated: { $gte: Number(from), $lte: Number(to) },
           [`${type}Id`]: { $exists: true }
         }
       },
+      { $sort: sort },
       {
         $skip: +offset
       },
@@ -91,7 +92,7 @@ transactions.post('/product', validateAdminToken, async (req: Request, res: Resp
       productId: new ObjectId(productId),
       userId: new ObjectId(userId),
       storeId: new ObjectId(user.storeId),
-      dateCreated: new Date()
+      dateCreated: Date.now()
     })
 
     await MongoHelper.db.collection('products').updateOne(
