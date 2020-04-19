@@ -1,12 +1,12 @@
 import { Router } from 'express'
-import boRouter from './bo'
-import clientRouter from './client'
-import auth from './auth'
+import employees from './employees'
+import users from './users'
+import stores from './stores'
+import offers from './offers'
+import products from './products'
+import transactions from './transactions'
 
 const router = Router()
-
-router.use('/auth', auth)
-router.use('/api/bo', boRouter)
-router.use('/api/client', clientRouter)
+router.use('/api', employees, users, stores, offers, products, transactions)
 
 export default router

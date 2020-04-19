@@ -1,10 +1,12 @@
+import { ItemAnalytics } from '../utils'
+
 export type Product = {
-  storeId: string
   name: string
+  storeId: string
   price: number
   lpPrice: number
-  rating: number
   lpReward: number
-  purchased: number
+  analytics: ItemAnalytics
+  description: string
   images: string[]
 }

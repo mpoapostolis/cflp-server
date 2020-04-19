@@ -1,23 +1,24 @@
-import { Coords } from './stores'
+import { Coords, ItemAnalytics } from '../utils'
 
-enum offerStatus {
-  ACTIVE = 'ACTIVE',
-  DRAFT = 'DRAFT'
+export enum offerStatus {
+  ONLINE = 'ONLINE',
+  OFFLINE = 'OFFLINE',
 }
 
-enum offerType {
-  DEBIT = 'DEBIT',
-  CREDIT = 'CREDIT'
-}
+export type Discounts = {
+  products: string
+  discount: number
+}[]
 
-type Offser = {
+export type Offer = {
   storeId: string
   name: string
-  type: offerType
-  lpPrice: number
-  coords: Coords
-  status: offerStatus
-  images: string[]
-  purchased: number
   description: string
+  coords: Coords
+  images: string[]
+  price: number
+  lpPrice: number
+  status: offerStatus
+  analytics: ItemAnalytics
+  discounts: Discounts
 }
