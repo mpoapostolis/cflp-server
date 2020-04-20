@@ -18,12 +18,14 @@ const schema = Joi.object({
 router.patch('/', validateToken, async (req: Request, res: Response) => {
   const error = schema.validate(req.body).error
   if (error) return res.status(400).send(error.details.map((obj) => obj.message))
+  const { storeId } = req.body
+
   const { id, ...rest } = req.body
   const db = await slourpDb()
 
   await db
     .collection('stores')
-    .updateOne({ _id: new ObjectID(id) }, { $set: rest })
+    .updateOne({ _id: new ObjectID(id), storeId: new ObjectID(storeId) }, { $set: rest })
     .catch((err) => res.status(500).send(err))
 
   res.status(201).json({ msg: `store ${req.body.name} has updated successfully` })
