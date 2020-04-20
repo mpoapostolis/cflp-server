@@ -3,8 +3,8 @@ export type User = {
   lastName?: string
   avatar?: string
   email?: string
-  gender?: 'male' | 'female'
-  age?: number
+  gender: 'male' | 'female'
+  age: number
   loyaltyPoints: Record<string, number>
   favorites: string[]
   username: string

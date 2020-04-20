@@ -9,7 +9,7 @@ const router = Router()
 const schema = Joi.object({
   id: Joi.string().alphanum().required(),
   name: Joi.string().max(30),
-  description: Joi.string().max(30).required(),
+  description: Joi.string().max(30),
   price: Joi.number().min(0),
   lpPrice: Joi.number().min(0),
   lpReward: Joi.number().min(0),
@@ -21,7 +21,6 @@ router.patch('/', validateToken, async (req: Request, res: Response) => {
   if (error) return res.status(400).send(error.details.map((obj) => obj.message))
   const { id, ...rest } = req.body
   const db = await slourpDb()
-
   await db
     .collection('products')
     .updateOne({ _id: new ObjectID(id) }, { $set: rest })
