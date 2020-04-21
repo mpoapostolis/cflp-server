@@ -9,11 +9,11 @@ import update from './update'
 const read = Router()
 
 read.get('/', validateToken, async (req: Request, res: Response) => {
-  const { searchTerm = '', limit = 10, skip = 0, storeId = new ObjectID(req.user.storeId) } = req.query
+  const { searchTerm = '', limit = 10, skip = 0, storeId = req.user.storeId } = req.query
   const db = await slourpDb()
   const collection = await db.collection('products')
   const products = await collection.find(
-    { storeId, name: { $regex: searchTerm } },
+    { storeId: new ObjectID(`${storeId}`), name: { $regex: searchTerm } },
     { projection: { _id: 0, storeId: 0, analytics: 0 } }
   )
   const total = await products.count()
