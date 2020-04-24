@@ -4,20 +4,17 @@ import { getMongoClient } from '../../utils/mongoHelper'
 import { ObjectId } from 'mongodb'
 import { validateToken } from '../../utils/token'
 
-type typeOfTransaction = 'reward' | 'payout'
 const router = Router()
 
 const schema = Joi.object({
   userId: Joi.string().alphanum().max(100).required(),
-  productId: Joi.string().alphanum().max(100).required(),
+  offerId: Joi.string().alphanum().max(100).required(),
 })
 
-router.post('/product/:type', validateToken, async (req: Request, res: Response) => {
+router.post('/offer', validateToken, async (req: Request, res: Response) => {
   const error = schema.validate(req.body).error
   if (error) return res.status(400).send(error.details.map((obj) => obj.message))
 
-  const type = req.params.type as typeOfTransaction
-  const factor = type === 'reward' ? 1 : -1
   const client = await getMongoClient()
   const session = client.startSession()
 
@@ -26,22 +23,27 @@ router.post('/product/:type', validateToken, async (req: Request, res: Response)
       .startSession()
       .withTransaction(async () => {
         const { storeId } = req.user
+        const offers = client.db('slourp').collection('offers')
         const products = client.db('slourp').collection('products')
         const users = client.db('slourp').collection('users')
         const transactions = client.db('slourp').collection('transactions')
-        const product = await products.findOne({ _id: new ObjectId(req.body.productId) })
+        const offer = await offers.findOne({ _id: new ObjectId(req.body.offerId) })
         const user = await users.findOne({ _id: new ObjectId(req.body.userId) })
+        const productIds = offer.discounts.map((disc) => new ObjectId(disc.productId))
 
-        if (type === 'payout' && user.loyaltyPoints[storeId] < product.lpPrice) throw 'inefficient lpPoints'
-
-        await users.updateOne(
-          { _id: new ObjectId(req.body.userId) },
+        await offers.updateOne(
+          { _id: new ObjectId(req.body.offerId) },
           {
-            $inc: { [`loyaltyPoints.${storeId}`]: factor * product.lpReward },
+            $inc: {
+              'analytics.purchased': 1,
+              [`analytics.${user.groups.gender}`]: 1,
+              [`analytics.ageGroup.${user.groups.groupAge}`]: 1,
+            },
           }
         )
-        await products.updateOne(
-          { _id: new ObjectId(req.body.productId) },
+
+        await products.updateMany(
+          { _id: { $in: productIds } },
           {
             $inc: {
               'analytics.purchased': 1,
@@ -52,7 +54,7 @@ router.post('/product/:type', validateToken, async (req: Request, res: Response)
         )
         await transactions.insertOne({
           userId: new ObjectId(req.body.userId),
-          productId: new ObjectId(req.body.productId),
+          offerId: new ObjectId(req.body.offerId),
           storeId: new ObjectId(storeId),
         })
       })
