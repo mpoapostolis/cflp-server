@@ -1,10 +1,15 @@
+export enum Gender {
+  'male' = 'male',
+  'female' = 'female',
+}
+
 export type User = {
   firstName?: string
   lastName?: string
   avatar?: string
   email?: string
-  gender: 'male' | 'female'
-  age: number
+  gender: Gender
+  birthday: Date
   loyaltyPoints: Record<string, number>
   favorites: string[]
   username: string

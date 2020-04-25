@@ -1,4 +1,6 @@
-import { User } from '../models/users'
+import { User, Gender } from '../models/users'
+
+import { differenceInCalendarYears } from 'date-fns'
 
 export type AgeGroup = {
   unkown: number
@@ -33,8 +35,9 @@ export const itemAnalytics = {
     '56+': 0,
   },
 }
+export function groupByAge(date: Date) {
+  const age = differenceInCalendarYears(new Date(), new Date(date))
 
-function groupByAge(age: number) {
   switch (true) {
     case age < 18:
       return '16-17'
@@ -52,10 +55,4 @@ function groupByAge(age: number) {
     default:
       return 'uknown'
   }
-}
-
-export function groupUser(user: User) {
-  const gender = user.gender
-  const groupAge = groupByAge(user.age)
-  return { gender, groupAge }
 }

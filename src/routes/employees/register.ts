@@ -27,7 +27,7 @@ router.post('/register', async (req: Request, res: Response) => {
   const alreadyExist = await employees.findOne({ username: req.body.username })
   if (alreadyExist) return res.status(409).json({ msg: `user ${req.body.username} already exists` })
   bcrypt.hash(req.body.password, 10, async (err, password) => {
-    if (err) res.status(500).send(err)
+    if (err) res.status(401).send(err)
     await employees.insertOne({ ...req.body, password }).catch((err) => res.status(500).send(err))
     res.status(201).json({ msg: `user ${req.body.username} has created successfully` })
   })
