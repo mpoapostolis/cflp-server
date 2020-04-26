@@ -1,5 +1,3 @@
-import { User, Gender } from '../models/users'
-
 import { differenceInCalendarYears } from 'date-fns'
 
 export type AgeGroup = {

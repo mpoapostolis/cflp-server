@@ -1,9 +1,11 @@
 import { MongoClient, Db } from 'mongodb'
+require('dotenv').config()
+
+const URI = `mongodb+srv://mpoapostolis:${process.env['PASS']}@slourpcluster0-2kwf7.mongodb.net`
 
 let cachedClient = null
 export async function getMongoClient(): Promise<MongoClient> {
   if (cachedClient) return cachedClient
-  const URI = `mongodb+srv://mpoapostolis:${process.env['PASS']}@slourpcluster0-2kwf7.mongodb.net`
   const client = await MongoClient.connect(URI, { useUnifiedTopology: true })
   cachedClient = client
   return client

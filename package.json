@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "tsnd --no-notify --respawn ./src",
+    "start": "tsnd -r ./.env --no-notify --respawn  ./src",
     "build": "tsc -p ."
   },
   "author": "",
@@ -17,6 +17,8 @@
     "@types/jsonwebtoken": "^8.3.9",
     "@types/mongodb": "^3.5.8",
     "@types/morgan": "^1.9.0",
+    "@types/multer": "^1.4.3",
+    "@types/multer-s3": "^2.7.7",
     "@types/node-fetch": "^2.5.7",
     "@types/ramda": "^0.27.3",
     "ts-node": "^8.8.2",
@@ -25,6 +27,7 @@
   },
   "dependencies": {
     "@hapi/hapi": "^19.1.1",
+    "aws-sdk": "^2.663.0",
     "bcrypt": "^4.0.1",
     "date-fns": "^2.12.0",
     "dotenv": "^8.2.0",
@@ -32,6 +35,8 @@
     "jsonwebtoken": "^8.5.1",
     "mongodb": "^3.5.6",
     "morgan": "^1.10.0",
+    "multer": "^1.4.2",
+    "multer-s3": "^2.9.0",
     "node-fetch": "^2.6.0",
     "ramda": "^0.27.0"
   }

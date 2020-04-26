@@ -1,9 +1,7 @@
 import router from './routes'
 import * as express from 'express'
 import * as morgan from 'morgan'
-import * as dotenv from 'dotenv'
-
-dotenv.config()
+require('dotenv').config()
 
 const PORT = process.env.PORT || 4000
 
