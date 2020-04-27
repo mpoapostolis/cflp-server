@@ -7,7 +7,7 @@ const router = Router()
 
 const schema = Joi.object({
   name: Joi.string().max(30).required(),
-  coords: Joi.array().items(Joi.number().min(-180).max(180)).length(2).required(),
+  coords: Joi.array().items(Joi.number().min(-180).max(180), Joi.number().min(-90).max(90)).length(2).required(),
   images: Joi.array(),
   description: Joi.string().max(150),
   adress: Joi.string().max(150),
