@@ -1,8 +1,9 @@
 import * as Joi from '@hapi/joi'
 import { Router, Request, Response } from 'express'
-import { getMongoClient } from '../../utils/mongoHelper'
 import { ObjectId } from 'mongodb'
 import { validateToken } from '../../utils/token'
+import { getMongoClient } from '../../utils/mongoHelper'
+import slourpDb from '../../utils/mongoHelper'
 
 type typeOfTransaction = 'reward' | 'payout'
 const router = Router()
@@ -65,4 +66,24 @@ router.post('/product/:type', validateToken, async (req: Request, res: Response)
   }
 })
 
+router.get('/products', validateToken, async (req: Request, res: Response) => {
+  const { storeId } = req.user
+  const db = await slourpDb()
+  const prodCollection = db.collection('products')
+  const transactions = db.collection('transactions')
+  const id = await transactions
+    .find({ storeId: new ObjectId(storeId) }, { projection: { _id: 0, productId: 1 } })
+    .toArray()
+
+  const ids = id.map((id) => new ObjectId(id.productId))
+  const prodcuts = await prodCollection
+    .find(
+      {
+        _id: { $in: ids },
+      },
+      { projection: { _id: 0, analytics: 1 } }
+    )
+    .toArray()
+  return res.status(200).json({ prodcuts })
+})
 export default router

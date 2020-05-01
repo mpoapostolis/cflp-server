@@ -17,7 +17,8 @@ const schema = Joi.object({
 
 const read = Router()
 
-read.get('/', validateToken, async (req: Request, res: Response) => {
+// read.get('/', validateToken, async (req: Request, res: Response) => {
+read.get('/', async (req: Request, res: Response) => {
   const lat = +req.query.lat
   const long = +req.query.long
   const radius = +req.query.radius
