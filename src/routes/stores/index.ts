@@ -41,13 +41,12 @@ read.get('/', async (req: Request, res: Response) => {
     {
       location: {
         $near: {
-          $geometry: { type: 'Point', coordinates: [long, lat] },
+          $geometry: { type: 'Point', coordinates: [lat, long] },
           $maxDistance: radius,
         },
       },
-      name: { $regex: searchTerm || '' },
     },
-    { projection: { location: 0, _id: 0 } }
+    { projection: { location: 0 } }
   )
   const total = await stores.count()
   const data = await stores

@@ -6,10 +6,10 @@ type Rating = {
 }
 
 export type Store = {
-  storeId: string
+  _id: string
   name: string
   coords: Coords
-  images: string[]
+  images: string
   description: string
   adress: string
   rating: Rating
