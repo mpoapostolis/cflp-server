@@ -8,7 +8,8 @@ import * as Joi from '@hapi/joi'
 
 const schema = Joi.object({
   searchTerm: Joi.string(),
-  radius: Joi.number().min(100).max(5000).required(),
+  // radius: Joi.number().min(100).max(50000).required(),
+  radius: Joi.number().min(100).required(), // dev purposes
   long: Joi.number().min(-180).max(180).required(),
   lat: Joi.number().min(-90).max(90).required(),
   limit: Joi.number().min(5).max(25),
