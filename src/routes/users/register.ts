@@ -3,6 +3,7 @@ import * as Joi from '@hapi/joi'
 import { Router, Request, Response } from 'express'
 import slourpDb from '../../utils/mongoHelper'
 import { groupByAge } from '../../utils'
+import { makeErrObj } from '../../utils/error'
 
 const router = Router()
 
@@ -19,7 +20,8 @@ const schema = Joi.object({
 
 router.post('/register', async (req: Request, res: Response) => {
   const error = schema.validate(req.body).error
-  if (error) return res.status(400).send(error.details.map((obj) => obj.message))
+
+  if (error) return res.status(400).json(makeErrObj(error.details))
   const db = await slourpDb()
 
   const users = db.collection('users')
