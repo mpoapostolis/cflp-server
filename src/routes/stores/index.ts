@@ -4,11 +4,24 @@ import slourpDb from '../../utils/mongoHelper'
 import del from './delete'
 import update from './update'
 import create from './create'
+import { makeErrObj } from '../../utils/error'
 import * as Joi from '@hapi/joi'
+import { ObjectID } from 'mongodb'
+
+const read = Router()
+
+read.get('/:id', validateToken, async (req: Request, res: Response) => {
+  const { id = '' } = req.params
+
+  const db = await slourpDb()
+  const collection = await db.collection('stores')
+  const store = await collection.findOne({ _id: new ObjectID(id) })
+  if (store) res.status(200).json(store)
+  else res.status(401)
+})
 
 const schema = Joi.object({
   searchTerm: Joi.string(),
-  // radius: Joi.number().min(100).max(50000).required(),
   radius: Joi.number().min(100).required(), // dev purposes
   long: Joi.number().min(-180).max(180).required(),
   lat: Joi.number().min(-90).max(90).required(),
@@ -16,10 +29,7 @@ const schema = Joi.object({
   skip: Joi.number().min(0),
 })
 
-const read = Router()
-
-// read.get('/', validateToken, async (req: Request, res: Response) => {
-read.get('/', async (req: Request, res: Response) => {
+read.get('/', validateToken, async (req: Request, res: Response) => {
   const lat = +req.query.lat
   const long = +req.query.long
   const radius = +req.query.radius
@@ -34,7 +44,7 @@ read.get('/', async (req: Request, res: Response) => {
     skip,
     searchTerm,
   }).error
-  if (error) return res.status(400).send(error.details.map((obj) => obj.message))
+  if (error) return res.status(400).json(makeErrObj(error.details))
 
   const db = await slourpDb()
   const collection = await db.collection('stores')
