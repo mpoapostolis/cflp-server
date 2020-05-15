@@ -9,15 +9,16 @@ CREATE TYPE votes AS (
 CREATE TABLE stores (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
     name varchar(48) NOT NULL,
-    coords geography (point) NOT NULL,
+    geom geography (point) NOT NULL,
+    coords point, 
     image varchar(64),
     description varchar(64),
-    adress varchar(64),
+    address varchar(64),
     rating votes,
-    date_createds timestamp NOT NULL DEFAULT NOW()
+    date_created timestamp NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX global_poitns_gix ON stores USING GIST (coords);
+CREATE INDEX global_poitns_gix ON stores USING GIST (geom);
 
 CREATE TYPE age_group AS (
     unkown int,

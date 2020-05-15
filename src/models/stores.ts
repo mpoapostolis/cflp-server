@@ -6,7 +6,7 @@ type Rating = {
 }
 
 export type Store = {
-  _id: string
+  id: string
   name: string
   coords: Coords
   images: string

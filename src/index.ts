@@ -13,6 +13,6 @@ app.use(express.json())
 
 app.use(router)
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`Server now listen at port: ${PORT}`)
 })
