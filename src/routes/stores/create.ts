@@ -11,7 +11,7 @@ const schema = Joi.object({
   lat: Joi.number().min(-90).max(90),
   image: Joi.array(),
   description: Joi.string().max(150),
-  adress: Joi.string().max(150),
+  address: Joi.string().max(150),
 })
 
 router.post('/', validateToken, async (req: Request, res: Response) => {
@@ -30,7 +30,8 @@ router.post('/', validateToken, async (req: Request, res: Response) => {
       rating: req.body.rating,
     })
     .into('stores')
-    .toString()
+    .toQuery()
+
   await pool.query(query)
   res.status(201).json({
     msg: `store ${req.body.name} has created successfully`,

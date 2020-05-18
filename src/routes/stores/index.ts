@@ -7,6 +7,7 @@ import create from './create'
 import { makeErrObj } from '../../utils/error'
 import * as Joi from '@hapi/joi'
 import { ObjectID } from 'mongodb'
+import pool, { qb, st } from '../../utils/pgHelper'
 
 const read = Router()
 
@@ -25,46 +26,38 @@ const schema = Joi.object({
   radius: Joi.number().min(100).required(), // dev purposes
   long: Joi.number().min(-180).max(180).required(),
   lat: Joi.number().min(-90).max(90).required(),
-  limit: Joi.number().min(5).max(25),
-  skip: Joi.number().min(0),
+  limit: Joi.number().min(5),
+  offset: Joi.number().min(0),
 })
 
 read.get('/', validateToken, async (req: Request, res: Response) => {
   const lat = +req.query.lat
   const long = +req.query.long
   const radius = +req.query.radius
-  const limit = +req.query.limit || 10
-  const skip = +req.query.skip || 0
+  const limit = +req.query.limit
+  const offset = +req.query.offset || 0
   const searchTerm = req.query.searchTerm
   const error = schema.validate({
     lat,
     long,
     radius,
     limit,
-    skip,
+    offset,
     searchTerm,
   }).error
   if (error) return res.status(400).json(makeErrObj(error.details))
 
-  const db = await slourpDb()
-  const collection = await db.collection('stores')
-  const stores = await collection.find(
-    {
-      location: {
-        $near: {
-          $geometry: { type: 'Point', coordinates: [lat, long] },
-          $maxDistance: radius,
-        },
-      },
-    },
-    { projection: { location: 0 } }
-  )
-  const total = await stores.count()
-  const data = await stores
-    .skip(+skip)
-    .limit(+limit)
-    .toArray()
-  res.status(200).json({ data, total })
+  const query = await qb
+    .select('name', 'coords', 'image', 'description', 'address', 'rating')
+    .where(st.dwithin('geom', st.geography(st.makePoint(long, lat)), radius))
+    .limit(limit)
+    .offset(offset)
+    .into('stores')
+    .toQuery()
+
+  const data = await pool.query(query)
+
+  res.status(200).json({ data: data.rows, total: data.rowCount })
 })
 
 const stores = Router()
