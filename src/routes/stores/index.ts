@@ -1,24 +1,27 @@
 import { Router, Request, Response } from 'express'
 import { validateToken } from '../../utils/token'
-import slourpDb from '../../utils/mongoHelper'
 import del from './delete'
 import update from './update'
 import create from './create'
 import { makeErrObj } from '../../utils/error'
 import * as Joi from '@hapi/joi'
-import { ObjectID } from 'mongodb'
 import pool, { qb, st } from '../../utils/pgHelper'
 
 const read = Router()
 
 read.get('/:id', validateToken, async (req: Request, res: Response) => {
   const { id = '' } = req.params
-
-  const db = await slourpDb()
-  const collection = await db.collection('stores')
-  const store = await collection.findOne({ _id: new ObjectID(id) })
-  if (store) res.status(200).json(store)
-  else res.status(401)
+  try {
+    const query = qb('stores')
+      .where({
+        id,
+      })
+      .toQuery()
+    const store = pool.query(query)
+    res.status(200).json(store)
+  } catch (error) {
+    res.status(401)
+  }
 })
 
 const schema = Joi.object({

@@ -1,9 +1,8 @@
-import * as R from 'ramda'
 import { Router, Request, Response } from 'express'
-import { generateToken } from '../../utils/token'
-import slourpDb from '../../utils/mongoHelper'
+import { getLoginResponse } from '../../utils/token'
 import fetch from 'node-fetch'
 import { groupByAge } from '../../utils'
+import pool, { qb } from '../../utils/pgHelper'
 
 const facebook = Router()
 const URL = `https://graph.facebook.com`
@@ -16,20 +15,26 @@ async function getAppAccessToken() {
 }
 
 async function debugUserToken(input_token: string, access_token: string) {
-  const appToken = await fetch(`${URL}/debug_token?input_token=${input_token}&access_token=${access_token}`)
+  const appToken = await fetch(
+    `${URL}/debug_token?input_token=${input_token}&access_token=${access_token}`
+  )
   return await appToken.json()
 }
 
 async function getUserInfo(id: string, access_token) {
-  const picture = await fetch(`${URL}/${id}/picture?type=large&access_token=${access_token}`)
-  const res = await fetch(`${URL}/${id}?fields=name,first_name,last_name,birthday,gender&access_token=${access_token}`)
+  const picture = await fetch(
+    `${URL}/${id}/picture?type=large&access_token=${access_token}`
+  )
+  const res = await fetch(
+    `${URL}/${id}?fields=name,first_name,last_name,birthday,gender&access_token=${access_token}`
+  )
   const infos = await res.json()
   const avatar = await picture.url
   return await {
-    fbId: infos.id,
-    username: infos.name,
-    firstName: infos.first_name,
-    lastName: infos.last_name,
+    fb_id: infos.id,
+    user_name: infos.name,
+    first_name: infos.first_name,
+    last_name: infos.last_name,
     gender: infos.gender,
     birthday: infos.birthday,
     avatar,
@@ -39,34 +44,42 @@ async function getUserInfo(id: string, access_token) {
 facebook.post('/login/facebook', async (req: Request, res: Response) => {
   const appToken = await getAppAccessToken()
   const user = await debugUserToken(req.body.token, appToken.access_token)
-  const db = await slourpDb()
-  const users = db.collection('users')
 
-  const foundUser = await users.findOne({ fbId: user.data.user_id })
-  if (foundUser) {
-    const infos = R.omit(['password', 'fbId'], foundUser)
-    const token = await generateToken({ _id: user._id }, '1d', process.env['TOKEN'])
-    const refreshToken = await generateToken({ _id: user._id }, '1w', process.env['TOKEN'])
-    return res.status(200).json({
-      ...infos,
-      token,
-      refreshToken,
-    })
-  } else {
-    const userInfo = await getUserInfo(user.data.user_id, req.body.token)
-    const ageGroup = groupByAge(userInfo.birthday)
-    const newUser = await users
-      .insertOne({ ...userInfo, loyaltyPoints: {}, groups: { ageGroup, gender: userInfo.gender } })
-      .then((res) => res.ops[0])
-      .catch((err) => res.status(500).send(err))
-    const infos = R.omit(['password', 'fbId'], newUser)
-    const token = generateToken({ _id: newUser._id }, '1d', process.env['TOKEN'])
-    const refreshToken = await generateToken({ _id: newUser._id }, '1w', process.env['TOKEN'])
-    return res.status(200).json({
-      ...infos,
-      token,
-      refreshToken,
-    })
+  try {
+    const q1 = qb('users')
+      .where({
+        fb_id: user.data.user_id,
+      })
+      .limit(1)
+      .toQuery()
+    const _user = await pool.query(q1)
+    if (_user.rowCount > 0) {
+      const response = await getLoginResponse(_user.rows[0])
+      return res.status(200).json(response)
+    } else {
+      const { birthday, gender, ...rest } = await getUserInfo(
+        user.data.user_id,
+        req.body.token
+      )
+
+      const ageGroup = groupByAge(birthday)
+
+      const newUser = {
+        ...rest,
+        loyalty_points: JSON.stringify({}),
+        groups: JSON.stringify({ ageGroup, gender }),
+      }
+
+      const q2 = qb('users').insert(newUser).toQuery()
+      await pool.query(q2)
+      const response = await getLoginResponse(newUser)
+      return res
+        .status(200)
+        .json({ ...response, groups: { ageGroup, gender }, loyalty_points: {} })
+    }
+  } catch (error) {
+    console.log(error)
+    return res.status(400).json({ msg: error })
   }
 })
 

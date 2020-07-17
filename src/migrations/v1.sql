@@ -22,12 +22,13 @@ CREATE INDEX global_poitns_gix ON stores USING GIST (geom);
 
 CREATE TYPE age_group AS (
     unkown int,
-    "16-17" int,
-    "18-24" int,
-    "25-34" int,
-    "35-44" int,
-    "45-55" int,
-    "56+" int
+   "13-17" int,
+   "18-24" int,
+   "25-34" int,
+   "35-44" int,
+   "45-54" int,
+   "55-64" int,
+   "65+" int
 );
 
 CREATE TYPE item_analytics AS (
@@ -37,42 +38,24 @@ CREATE TYPE item_analytics AS (
     age_group age_group
 );
 
-CREATE TABLE products (
+CREATE TABLE tags(
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
-    names varchar(48),
+    tag_name varchar(48)
+);
+
+
+CREATE TABLE products(
+    id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
+    product_name varchar(48),
     store_id uuid REFERENCES stores (id),
     price real,
-    lpPrice real,
-    lpReward real,
+    lp_price real,
+    lp_reward real,
     analytics item_analytics,
     description varchar(48),
     images varchar(64),
-    date_created timestamp NOT NULL DEFAULT NOW()
-);
-
-CREATE TYPE offer_status AS ENUM (
-    'ONLINE',
-    'OFFLINE'
-);
-
-CREATE TYPE discounts AS (
-    product_id uuid,
-    discounts int
-);
-
-
-
-CREATE TABLE offers(
-    id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
-    store_id uuid REFERENCES stores (id),
-    description varchar(48),
-    images varchar(64),
-    price real,
-    lpPrice real,
-    status offer_status,
-    analytics item_analytics,
-    discounts discounts[],
-    date_created timestamp NOT NULL DEFAULT NOW()
+    date_created timestamp NOT NULL DEFAULT NOW(),
+    tags tags[] REFERENCES tags (id)
 );
 
 CREATE TYPE gender AS ENUM (
@@ -82,36 +65,25 @@ CREATE TYPE gender AS ENUM (
 
 CREATE TABLE users(
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
-    firstName varchar(36),
-    lastName varchar(36),
-    avatar varchar(36),
-    email varchar(36),
+    store_id uuid REFERENCES stores (id),
+    first_name varchar(64),
+    last_name varchar(64),
+    avatar varchar(256),
+    email varchar(64),
     gender gender,
     loyalty_points json,
+    groups json,
     favorites uuid[],
-    username varchar(36),
-    password varchar(36),
-    fbId varchar(36),
+    user_name varchar(64),
+    password varchar(64),
+    fb_id varchar(64),
     date_created timestamp NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE employees(
-    id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
-    store_id uuid not null REFERENCES stores (id),
-    username varchar(36),
-    password varchar(36),
-    firstName varchar(36),
-    lastName varchar(36),
-    email varchar(36),
-    age int,
-    gender gender,
-    date_created timestamp NOT NULL DEFAULT NOW()
-);
 
-CREATE TABLE transactions (
+CREATE TABLE orders (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
     user_id uuid not null REFERENCES users (id),
-    offer_id uuid not null REFERENCES offers (id),
     product_id uuid not null REFERENCES products (id),
     date_created timestamp NOT NULL DEFAULT NOW()
 )

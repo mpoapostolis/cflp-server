@@ -1,13 +1,16 @@
 import * as jwt from 'jsonwebtoken'
+import * as R from 'ramda'
 import { Request, Response, NextFunction } from 'express'
+require('dotenv').config()
 
 export type UserTypeToken = {
   id: string
   storeId?: string
 }
 
-export function generateToken(obj: Record<string, any>, duration: string, key: string) {
-  return jwt.sign(obj, key, { expiresIn: duration })
+export function generateToken(obj: Record<string, any>, duration: string) {
+  const ids = R.pick(['id', 'store_id'], obj)
+  return jwt.sign(ids, process.env['TOKEN'], { expiresIn: duration })
 }
 
 export function validateToken(req: Request, res: Response, next: NextFunction) {
@@ -21,4 +24,15 @@ export function validateToken(req: Request, res: Response, next: NextFunction) {
     req['user'] = user
     next()
   })
+}
+
+export async function getLoginResponse(obj: Record<string, any>) {
+  const infos = R.omit(['password', 'fbId'], obj)
+  const token = await generateToken(obj, '1d')
+  const refresh_token = await generateToken(obj, '1w')
+  return {
+    ...infos,
+    token,
+    refresh_token,
+  }
 }

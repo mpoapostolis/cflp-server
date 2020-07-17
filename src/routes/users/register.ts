@@ -1,9 +1,9 @@
 import * as bcrypt from 'bcrypt'
 import * as Joi from '@hapi/joi'
 import { Router, Request, Response } from 'express'
-import slourpDb from '../../utils/mongoHelper'
 import { groupByAge } from '../../utils'
 import { makeErrObj } from '../../utils/error'
+import pool, { qb } from '../../utils/pgHelper'
 
 const router = Router()
 
@@ -15,29 +15,51 @@ const schema = Joi.object({
   firstName: Joi.string().min(5).max(30),
   lastName: Joi.string().min(5).max(30),
   avatar: Joi.string().min(5).max(30),
-  email: Joi.string().email({ minDomainSegments: 2, tlds: { allow: ['com', 'net', 'gr'] } }),
+  email: Joi.string().email({
+    minDomainSegments: 2,
+    tlds: { allow: ['com', 'net', 'gr'] },
+  }),
 })
 
 router.post('/register', async (req: Request, res: Response) => {
   const error = schema.validate(req.body).error
 
   if (error) return res.status(400).json(makeErrObj(error.details))
-  const db = await slourpDb()
 
-  const users = db.collection('users')
-  // check if user exist
-  const alreadyExist = await users.findOne({ username: req.body.username })
-
-  if (alreadyExist) return res.status(409).json({ msg: `user ${req.body.username} already exists` })
+  const q1 = qb('users')
+    .where({
+      username: req.body.username,
+    })
+    .limit(1)
+    .toQuery()
+  const user = await pool.query(q1)
+  if (user.rowCount > 0)
+    return res
+      .status(409)
+      .json({ msg: `user ${req.body.username} already exists` })
 
   bcrypt.hash(req.body.password, 10, async (err, password) => {
-    if (err) return res.status(401).send(err)
+    if (err) return res.status(500).send(err)
+    try {
+      const { birthday, gender, ...rest } = req.body
+      const ageGroup = groupByAge(birthday)
+      const q2 = qb('users')
+        .insert({
+          ...rest,
+          loyalty_points: JSON.stringify({}),
+          password,
+          groups: JSON.stringify({ ageGroup, gender }),
+        })
+        .toQuery()
+      await pool.query(q2)
 
-    const ageGroup = groupByAge(req.body.birthday)
-    await users
-      .insertOne({ ...req.body, loyaltyPoints: {}, password, groups: { ageGroup, gender: req.body.gender } })
-      .catch((err) => res.status(500).send(err))
-    res.status(201).json({ msg: `user ${req.body.username} has created successfully` })
+      res
+        .status(201)
+        .json({ msg: `user ${req.body.username} has created successfully` })
+    } catch (error) {
+      console.log(error)
+      res.status(500).json({ msg: error })
+    }
   })
 })
 
