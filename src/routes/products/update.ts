@@ -3,6 +3,8 @@ import { ObjectID } from 'mongodb'
 import { Router, Request, Response } from 'express'
 import { validateToken } from '../../utils/token'
 import slourpDb from '../../utils/mongoHelper'
+import { makeErrObj } from '../../utils/error'
+import pool, { qb } from '../../utils/pgHelper'
 
 const router = Router()
 
@@ -18,16 +20,17 @@ const schema = Joi.object({
 
 router.patch('/', validateToken, async (req: Request, res: Response) => {
   const error = schema.validate(req.body).error
-  if (error) return res.status(400).send(error.details.map((obj) => obj.message))
-  const { storeId } = req.body
-  const { id, ...rest } = req.body
-  const db = await slourpDb()
-  await db
-    .collection('products')
-    .updateOne({ _id: new ObjectID(id), storeId: new ObjectID(storeId) }, { $set: rest })
-    .catch((err) => res.status(500).send(err))
-
-  res.status(200).json({ msg: `product has updated successfully` })
+  if (error) return res.status(400).json(makeErrObj(error.details))
+  const query = qb('products')
+    .where({ id: req.body.id })
+    .update(req.body)
+    .toQuery()
+  try {
+    await pool.query(query)
+    return res.status(200).json({ msg: `product has updated successfully` })
+  } catch (error) {
+    return res.status(400).json({ msg: error })
+  }
 })
 
 export default router

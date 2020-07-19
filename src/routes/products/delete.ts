@@ -1,8 +1,8 @@
 import * as Joi from '@hapi/joi'
-import { ObjectID } from 'mongodb'
 import { Router, Request, Response } from 'express'
-import slourpDb from '../../utils/mongoHelper'
 import { validateToken } from '../../utils/token'
+import pool, { qb } from '../../utils/pgHelper'
+import { makeErrObj } from '../../utils/error'
 
 const router = Router()
 
@@ -12,14 +12,19 @@ const schema = Joi.object({
 
 router.delete('/', validateToken, async (req: Request, res: Response) => {
   const error = schema.validate(req.body).error
-  if (error) return res.status(400).send(error.details.map((obj) => obj.message))
-  const db = await slourpDb()
-
-  const found = await db
-    .collection('products')
-    .deleteOne({ _id: new ObjectID(req.body.id), storeId: new ObjectID(req.body.storeId) })
-  if (found.deletedCount > 0) return res.status(201).json({ msg: `product has deleted successfully` })
-  else return res.status(401).json({ msg: `id ${req.body.id} does not exist` })
+  if (error) return res.status(400).json(makeErrObj(error.details))
+  const query = qb('products')
+    .where({
+      id: req.params.id,
+    })
+    .delete()
+    .toQuery()
+  try {
+    await pool.query(query)
+    return res.status(201).json({ msg: `product has deleted successfully` })
+  } catch (error) {
+    res.status(400).json({ msg: error })
+  }
 })
 
 export default router

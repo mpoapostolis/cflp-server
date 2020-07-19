@@ -1,9 +1,7 @@
 import * as Joi from '@hapi/joi'
-import { ObjectID } from 'mongodb'
 import { Router, Request, Response } from 'express'
-import { itemAnalytics } from '../../utils'
-import { validateToken } from '../../utils/token'
-import slourpDb from '../../utils/mongoHelper'
+import { makeErrObj } from '../../utils/error'
+import pool, { qb } from '../../utils/pgHelper'
 
 const router = Router()
 
@@ -18,19 +16,16 @@ const schema = Joi.object({
 
 router.post('/', async (req: Request, res: Response) => {
   const error = schema.validate(req.body).error
-  console.log(req.body)
-  if (error)
-    return res.status(400).send(error.details.map((obj) => obj.message))
-  const db = await slourpDb()
-  await db
-    .collection('products')
-    .insertOne({
-      ...req.body,
-      storeId: new ObjectID(req.user.storeId),
-      analytics: itemAnalytics,
-    })
-    .catch((err) => res.status(500).send(err))
-  res.status(201).json({ msg: `${req.body.name} has created successfully` })
+  if (error) return res.status(400).json(makeErrObj(error.details))
+
+  const query = qb('products').insert(req.body).toQuery()
+
+  try {
+    await pool.query(query)
+    res.status(201).json({ msg: `${req.body.name} has created successfully` })
+  } catch (error) {
+    res.status(500).json({ msg: error })
+  }
 })
 
 export default router

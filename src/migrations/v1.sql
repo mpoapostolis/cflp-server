@@ -38,16 +38,17 @@ CREATE TYPE item_analytics AS (
     age_group age_group
 );
 
+
+
 CREATE TABLE tags(
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
     tag_name varchar(48)
 );
 
-
 CREATE TABLE products(
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
     product_name varchar(48),
-    store_id uuid REFERENCES stores (id),
+    store_id uuid,
     price real,
     lp_price real,
     lp_reward real,
@@ -55,8 +56,17 @@ CREATE TABLE products(
     description varchar(48),
     images varchar(64),
     date_created timestamp NOT NULL DEFAULT NOW(),
-    tags tags[] REFERENCES tags (id)
+    FOREIGN KEY (store_id) REFERENCES stores(id) ON UPDATE CASCADE
 );
+
+CREATE TABLE products_tags (
+    product_id uuid,
+    tag_id uuid,
+    id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
+    FOREIGN KEY (product_id) REFERENCES products(id) ON UPDATE CASCADE,
+    FOREIGN KEY (tag_id) REFERENCES tags(id) ON UPDATE CASCADE
+);
+
 
 CREATE TYPE gender AS ENUM (
     'male',
