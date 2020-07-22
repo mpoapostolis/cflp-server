@@ -1,7 +1,5 @@
-import { ObjectID } from 'mongodb'
 import { Router, Request, Response } from 'express'
 import { validateToken } from '../../utils/token'
-import slourpDb from '../../utils/mongoHelper'
 import create from './create'
 import del from './delete'
 import update from './update'

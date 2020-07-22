@@ -41,8 +41,7 @@ CREATE TYPE item_analytics AS (
 
 
 CREATE TABLE tags(
-    id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
-    tag_name varchar(48)
+    tag_name varchar(48)  PRIMARY KEY
 );
 
 CREATE TABLE products(
@@ -55,18 +54,10 @@ CREATE TABLE products(
     analytics item_analytics,
     description varchar(48),
     images varchar(64),
+    tags varchar(48)[],
     date_created timestamp NOT NULL DEFAULT NOW(),
     FOREIGN KEY (store_id) REFERENCES stores(id) ON UPDATE CASCADE
 );
-
-CREATE TABLE products_tags (
-    product_id uuid,
-    tag_id uuid,
-    id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
-    FOREIGN KEY (product_id) REFERENCES products(id) ON UPDATE CASCADE,
-    FOREIGN KEY (tag_id) REFERENCES tags(id) ON UPDATE CASCADE
-);
-
 
 CREATE TYPE gender AS ENUM (
     'male',

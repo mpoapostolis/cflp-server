@@ -1,8 +1,6 @@
 import * as Joi from '@hapi/joi'
-import { ObjectID } from 'mongodb'
 import { Router, Request, Response } from 'express'
 import { validateToken } from '../../utils/token'
-import slourpDb from '../../utils/mongoHelper'
 import { makeErrObj } from '../../utils/error'
 import pool, { qb } from '../../utils/pgHelper'
 
