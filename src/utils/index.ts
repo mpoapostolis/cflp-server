@@ -36,6 +36,7 @@ export const itemAnalytics = {
   },
 }
 export function groupByAge(date: Date) {
+  console.log(date)
   const age = differenceInCalendarYears(new Date(), new Date(date))
 
   switch (true) {

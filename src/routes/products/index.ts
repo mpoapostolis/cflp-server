@@ -19,8 +19,10 @@ read.get('/', validateToken, async (req: Request, res: Response) => {
     .select('*')
     .where('product_name', 'like', `${searchTerm}%`)
     .andWhere({
-      storeId: req.body.storeId,
+      storeId,
     })
+    .limit(+limit)
+    .offset(+skip)
     .toQuery()
   try {
     const data = await await pool.query(query)
@@ -42,6 +44,11 @@ read.get('/client', validateToken, async (req: Request, res: Response) => {
     .select('*')
     .innerJoin('stores', 'products.store_id', 'stores.id')
     .where('product_name', 'like', `${searchTerm}%`)
+    .andWhere({
+      storeId,
+    })
+    .limit(+limit)
+    .offset(+skip)
     .toQuery()
   try {
     const data = await await pool.query(query)

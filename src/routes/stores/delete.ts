@@ -1,5 +1,4 @@
 import { Request, Response, Router } from 'express'
-import { PrismaClient } from '@prisma/client'
 import { validateToken } from '../../utils/token'
 import pool, { qb } from '../../utils/pgHelper'
 

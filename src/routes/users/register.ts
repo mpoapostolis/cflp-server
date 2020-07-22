@@ -8,12 +8,13 @@ import pool, { qb } from '../../utils/pgHelper'
 const router = Router()
 
 const schema = Joi.object({
-  username: Joi.string().min(5).max(30).required(),
+  user_name: Joi.string().min(5).max(30).required(),
   password: Joi.string().min(5).max(30).required(),
   birthday: Joi.date().required(),
+  store_id: Joi.string(),
   gender: Joi.string().valid('male', 'female').required(),
-  firstName: Joi.string().min(5).max(30),
-  lastName: Joi.string().min(5).max(30),
+  first_name: Joi.string().min(5).max(30),
+  last_name: Joi.string().min(5).max(30),
   avatar: Joi.string().min(5).max(30),
   email: Joi.string().email({
     minDomainSegments: 2,
@@ -23,12 +24,12 @@ const schema = Joi.object({
 
 router.post('/register', async (req: Request, res: Response) => {
   const error = schema.validate(req.body).error
-
+  console.log(error)
   if (error) return res.status(400).json(makeErrObj(error.details))
 
   const q1 = qb('users')
     .where({
-      username: req.body.username,
+      user_name: req.body.user_name,
     })
     .limit(1)
     .toQuery()
@@ -36,7 +37,7 @@ router.post('/register', async (req: Request, res: Response) => {
   if (user.rowCount > 0)
     return res
       .status(409)
-      .json({ msg: `user ${req.body.username} already exists` })
+      .json({ msg: `user ${req.body.user_name} already exists` })
 
   bcrypt.hash(req.body.password, 10, async (err, password) => {
     if (err) return res.status(500).send(err)
@@ -55,7 +56,7 @@ router.post('/register', async (req: Request, res: Response) => {
 
       res
         .status(201)
-        .json({ msg: `user ${req.body.username} has created successfully` })
+        .json({ msg: `user ${req.body.user_name} has created successfully` })
     } catch (error) {
       console.log(error)
       res.status(500).json({ msg: error })

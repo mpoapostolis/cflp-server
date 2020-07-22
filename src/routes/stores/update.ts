@@ -1,5 +1,4 @@
 import * as Joi from '@hapi/joi'
-import { ObjectID } from 'mongodb'
 import { validateToken } from '../../utils/token'
 import { Request, Response, Router } from 'express'
 import { makeErrObj } from '../../utils/error'

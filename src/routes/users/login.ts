@@ -9,7 +9,7 @@ router.post('/login', async (req: Request, res: Response) => {
   try {
     const q1 = qb('users')
       .where({
-        username: req.body.username,
+        user_name: req.body.user_name,
       })
       .limit(1)
       .toQuery()
