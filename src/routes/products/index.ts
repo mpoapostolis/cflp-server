@@ -12,14 +12,13 @@ read.get('/', validateToken, async (req: Request, res: Response) => {
     searchTerm = '',
     limit = 10,
     skip = 0,
-    storeId = req.user.storeId,
+    store_id = req.user.store_id,
   } = req.query
-
   const query = qb('products')
     .select('*')
     .where('product_name', 'like', `${searchTerm}%`)
-    .andWhere({
-      storeId,
+    .where({
+      store_id,
     })
     .limit(+limit)
     .offset(+skip)
@@ -37,7 +36,7 @@ read.get('/client', validateToken, async (req: Request, res: Response) => {
     searchTerm = '',
     limit = 10,
     skip = 0,
-    storeId = req.user.storeId,
+    store_id = req.user.store_id,
   } = req.query
 
   const query = qb('products')
@@ -45,7 +44,7 @@ read.get('/client', validateToken, async (req: Request, res: Response) => {
     .innerJoin('stores', 'products.store_id', 'stores.id')
     .where('product_name', 'like', `${searchTerm}%`)
     .andWhere({
-      storeId,
+      store_id,
     })
     .limit(+limit)
     .offset(+skip)
