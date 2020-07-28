@@ -7,24 +7,36 @@ import pool, { qb } from '../../utils/pgHelper'
 const router = Router()
 
 const schema = Joi.object({
-  id: Joi.string().alphanum().required(),
-  name: Joi.string().max(30),
+  product_name: Joi.string().max(30),
   description: Joi.string().max(30),
   price: Joi.number().min(0),
-  lpPrice: Joi.number().min(0),
-  lpReward: Joi.number().min(0),
+  lp_price: Joi.number().min(0),
+  lp_reward: Joi.number().min(0),
   images: Joi.array().items(Joi.string()),
+  tags: Joi.array().items(Joi.string()),
 })
 
-router.patch('/', validateToken, async (req: Request, res: Response) => {
+router.patch('/:id', validateToken, async (req: Request, res: Response) => {
   const error = schema.validate(req.body).error
   if (error) return res.status(400).json(makeErrObj(error.details))
-  const query = qb('products')
-    .where({ id: req.body.id })
-    .update(req.body)
+
+  const { id, tags, ...rest } = req.body
+
+  const q1 = qb('products')
+    .where({ id: req.params.id })
+    .update({ ...rest, tags })
     .toQuery()
+
+  const q2 = (tag_name: string) =>
+    qb('tags')
+      .insert({
+        tag_name,
+      })
+      .toQuery()
+
   try {
-    await pool.query(query)
+    await pool.query(q1)
+    tags.forEach(async (tag) => await pool.query(q2(tag)).catch((e) => void 0))
     return res.status(200).json({ msg: `product has updated successfully` })
   } catch (error) {
     return res.status(400).json({ msg: error })

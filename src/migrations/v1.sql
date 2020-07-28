@@ -35,7 +35,7 @@ CREATE TYPE item_analytics AS (
     purchased int,
     male int,
     female int,
-    age_group age_group
+    age_group json
 );
 
 
@@ -51,7 +51,7 @@ CREATE TABLE products(
     price real,
     lp_price real,
     lp_reward real,
-    analytics item_analytics,
+    analytics  json,
     description varchar(48),
     images varchar(64),
     tags varchar(48)[],

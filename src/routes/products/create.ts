@@ -3,16 +3,18 @@ import { Router, Request, Response } from 'express'
 import { makeErrObj } from '../../utils/error'
 import pool, { qb } from '../../utils/pgHelper'
 import { validateToken } from '../../utils/token'
+import { analytics } from '../../utils'
 
 const router = Router()
 
 const schema = Joi.object({
-  name: Joi.string().max(30).required(),
-  description: Joi.string().max(30).required(),
+  product_name: Joi.string().max(30).required(),
+  description: Joi.string().max(30),
   price: Joi.number().min(0).required(),
-  lpPrice: Joi.number().min(0),
-  lpReward: Joi.number().min(0),
+  lp_price: Joi.number().min(0),
+  lp_reward: Joi.number().min(0),
   images: Joi.array().items(Joi.string()),
+  tags: Joi.array().items(Joi.string()),
 })
 
 router.post('/', validateToken, async (req: Request, res: Response) => {
@@ -20,7 +22,13 @@ router.post('/', validateToken, async (req: Request, res: Response) => {
   if (error) return res.status(400).json(makeErrObj(error.details))
 
   const { tags } = req.body
-  const q1 = qb('products').insert(req.body).toQuery()
+  const q1 = qb('products')
+    .insert({
+      ...req.body,
+      store_id: req.user.store_id,
+      analytics: JSON.stringify(analytics),
+    })
+    .toQuery()
   const q2 = (tag_name: string) =>
     qb('tags')
       .insert({
@@ -33,6 +41,7 @@ router.post('/', validateToken, async (req: Request, res: Response) => {
     tags.forEach(async (tag) => await pool.query(q2(tag)).catch((e) => void 0))
     res.status(201).json({ msg: `${req.body.name} has created successfully` })
   } catch (error) {
+    console.log(error)
     await pool.query('ROLLBACK')
     res.status(500).json({ msg: error })
   }

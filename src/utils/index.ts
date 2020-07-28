@@ -20,7 +20,7 @@ export type ItemAnalytics = {
   ageGroup: AgeGroup
 }
 
-export const itemAnalytics = {
+export const analytics = {
   purchased: 0,
   male: 0,
   female: 0,

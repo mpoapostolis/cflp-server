@@ -17,7 +17,7 @@ read.get('/', validateToken, async (req: Request, res: Response) => {
   const query = qb('products')
     .select('*')
     .where('product_name', 'like', `${searchTerm}%`)
-    .where({
+    .andWhere({
       store_id,
     })
     .limit(+limit)
@@ -25,6 +25,7 @@ read.get('/', validateToken, async (req: Request, res: Response) => {
     .toQuery()
   try {
     const data = await await pool.query(query)
+    console.log(data.rows)
     res.status(200).json({ data: data.rows, total: data.rowCount })
   } catch (error) {
     res.status(500).json({ msg: error })
@@ -52,6 +53,23 @@ read.get('/client', validateToken, async (req: Request, res: Response) => {
   try {
     const data = await await pool.query(query)
     res.status(200).json({ data: data.rows, total: data.rowCount })
+  } catch (error) {
+    res.status(500).json({ msg: error })
+  }
+})
+
+read.get('/:id', validateToken, async (req: Request, res: Response) => {
+  const query = qb('products')
+    .select('*')
+
+    .andWhere({
+      id: req.params.id,
+    })
+    .toQuery()
+  const data = await await pool.query(query)
+
+  try {
+    res.status(200).json({ ...data.rows[0] })
   } catch (error) {
     res.status(500).json({ msg: error })
   }

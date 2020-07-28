@@ -4,14 +4,22 @@ export enum Gender {
 }
 
 export type User = {
-  firstName?: string
-  lastName?: string
-  avatar?: string
-  email?: string
-  gender: Gender
-  birthday: Date
-  loyaltyPoints: Record<string, number>
+  id: string
+  store_id: string
+  first_name: string
+  last_name: string
+  avatar: string
+  email: string
+  gender: string
+  loyalty_points: Record<string, number>
+  groups: {
+    ageGroup: string
+    gender: string
+  }
   favorites: string[]
-  username: string
-  password: string
+  user_name: string
+  fb_id: string
+  date_created: string
+  token: string
+  refresh_token: string
 }
