@@ -72,7 +72,7 @@ CREATE TABLE users(
     avatar varchar(256),
     email varchar(64),
     gender gender,
-    loyalty_points json,
+    loyalty_points real,
     groups json,
     favorites uuid[],
     user_name varchar(64),

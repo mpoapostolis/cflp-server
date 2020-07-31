@@ -41,16 +41,11 @@ router.post('/orders', async (req: Request, res: Response) => {
       })
       .toQuery()
 
-    console.log(q4)
-
     await client.query(q4)
 
     const q5 = qb('users')
       .update({
-        loyalty_points: JSON.stringify({
-          [req.body.store_id]:
-            user.loyalty_points[req.body.store_id] + product.lp_reward ?? 1,
-        }),
+        loyalty_points: user.loyalty_points + product.price * 90 ?? 1,
       })
       .where({
         id: req.body.user_id,
