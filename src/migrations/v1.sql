@@ -49,8 +49,6 @@ CREATE TABLE products(
     product_name varchar(48),
     store_id uuid,
     price real,
-    lp_price real,
-    lp_reward real,
     analytics  json,
     description varchar(48),
     images varchar(64),

@@ -24,7 +24,6 @@ const schema = Joi.object({
 
 router.post('/register', async (req: Request, res: Response) => {
   const error = schema.validate(req.body).error
-  console.log(error)
   if (error) return res.status(400).json(makeErrObj(error.details))
 
   const q1 = qb('users')
