@@ -32,21 +32,12 @@ read.get('/', validateToken, async (req: Request, res: Response) => {
   }
 })
 
-read.get('/client', validateToken, async (req: Request, res: Response) => {
-  const {
-    searchTerm = '',
-    limit = 10,
-    skip = 0,
-    store_id = req.user.store_id,
-  } = req.query
+read.get('/client', async (req: Request, res: Response) => {
+  const { searchTerm = '', limit = 10, skip = 0 } = req.query
 
   const query = qb('products')
     .select('*')
-    .innerJoin('stores', 'products.store_id', 'stores.id')
     .where('product_name', 'like', `${searchTerm}%`)
-    .andWhere({
-      store_id,
-    })
     .limit(+limit)
     .offset(+skip)
     .toQuery()

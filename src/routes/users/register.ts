@@ -46,7 +46,7 @@ router.post('/register', async (req: Request, res: Response) => {
       const q2 = qb('users')
         .insert({
           ...rest,
-          loyalty_points: JSON.stringify({}),
+          loyalty_points: 0,
           password,
           groups: JSON.stringify({ ageGroup, gender }),
         })

@@ -15,7 +15,7 @@ const schema = Joi.object({
   address: Joi.string().max(150).required(),
 })
 
-router.post('/', validateToken, async (req: Request, res: Response) => {
+router.post('/', async (req: Request, res: Response) => {
   const error = schema.validate(req.body).error
   if (error) return res.status(400).json(makeErrObj(error.details))
 

@@ -41,7 +41,7 @@ async function getUserInfo(id: string, access_token) {
   }
 }
 
-facebook.post('/login/facebook', async (req: Request, res: Response) => {
+facebook.post('/facebook', async (req: Request, res: Response) => {
   const appToken = await getAppAccessToken()
   const user = await debugUserToken(req.body.token, appToken.access_token)
 
@@ -66,16 +66,14 @@ facebook.post('/login/facebook', async (req: Request, res: Response) => {
 
       const newUser = {
         ...rest,
-        loyalty_points: JSON.stringify({}),
+        loyalty_points: 0,
         groups: JSON.stringify({ ageGroup, gender }),
       }
 
       const q2 = qb('users').insert(newUser).toQuery()
       await pool.query(q2)
       const response = await getLoginResponse(newUser)
-      return res
-        .status(200)
-        .json({ ...response, groups: { ageGroup, gender }, loyalty_points: {} })
+      return res.status(200).json({ ...response, groups: { ageGroup, gender } })
     }
   } catch (error) {
     console.log(error)

@@ -41,7 +41,9 @@ CREATE TYPE item_analytics AS (
 
 
 CREATE TABLE tags(
-    tag_name varchar(48)  PRIMARY KEY
+    tag_name varchar(48)  PRIMARY KEY,
+    store_id uuid,
+    FOREIGN KEY (store_id) REFERENCES stores(id) ON UPDATE CASCADE
 );
 
 CREATE TABLE products(
@@ -72,16 +74,22 @@ CREATE TABLE users(
     gender gender,
     loyalty_points real,
     groups json,
-    favorites uuid[],
     user_name varchar(64),
     password varchar(64),
     fb_id varchar(64),
     date_created timestamp NOT NULL DEFAULT NOW()
 );
 
+CRETE TABLE favorites(
+    id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
+    user_id uuid not null REFERENCES users (id),
+    product_id uuid not null REFERENCES products (id),
+)
+
 
 CREATE TABLE orders (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
+    store_id uuid REFERENCES stores (id),
     user_id uuid not null REFERENCES users (id),
     product_id uuid not null REFERENCES products (id),
     date_created timestamp NOT NULL DEFAULT NOW()

@@ -31,6 +31,7 @@ router.post('/', validateToken, async (req: Request, res: Response) => {
     qb('tags')
       .insert({
         tag_name,
+        store_id: req.user.store_id,
       })
       .toQuery()
 
