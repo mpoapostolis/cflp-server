@@ -9,6 +9,25 @@ import pool, { qb, st } from '../../utils/pgHelper'
 
 const read = Router()
 
+read.get('/client', async (req: Request, res: Response) => {
+  const { storeSearchTerm = '', limit = 10, offset = 0 } = req.query
+
+  const query = qb('stores')
+    .select('*')
+    .where('name', 'ilike', `${storeSearchTerm}%`)
+    .limit(+limit)
+    .offset(+offset)
+    .toQuery()
+
+  try {
+    const data = await await pool.query(query)
+    res.status(200).json({ data: data.rows, total: data.rowCount })
+  } catch (error) {
+    console.log(error)
+    res.status(500).json({ msg: error })
+  }
+})
+
 read.get('/:id', validateToken, async (req: Request, res: Response) => {
   const { id = '' } = req.params
   try {
@@ -33,7 +52,7 @@ const schema = Joi.object({
   offset: Joi.number().min(0),
 })
 
-read.get('/', validateToken, async (req: Request, res: Response) => {
+read.get('/', async (req: Request, res: Response) => {
   const lat = +req.query.lat
   const long = +req.query.long
   const radius = +req.query.radius
