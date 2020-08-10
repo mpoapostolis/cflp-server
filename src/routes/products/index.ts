@@ -11,7 +11,7 @@ read.get('/', validateToken, async (req: Request, res: Response) => {
   const {
     searchTerm = '',
     limit = 10,
-    skip = 0,
+    offset = 0,
     store_id = req.user.store_id,
   } = req.query
   const query = qb('products')
@@ -21,7 +21,7 @@ read.get('/', validateToken, async (req: Request, res: Response) => {
       store_id,
     })
     .limit(+limit)
-    .offset(+skip)
+    .offset(+offset)
     .toQuery()
   try {
     const data = await await pool.query(query)
@@ -33,16 +33,18 @@ read.get('/', validateToken, async (req: Request, res: Response) => {
 })
 
 read.get('/client', async (req: Request, res: Response) => {
-  const { searchTerm = '', limit = 10, skip = 0 } = req.query
+  const { searchTerm = '', limit = 10, offset = 0 } = req.query
 
   const query = qb('products')
     .select('*')
     .where('product_name', 'like', `${searchTerm}%`)
     .limit(+limit)
-    .offset(+skip)
+    .offset(+offset)
     .toQuery()
+
   try {
     const data = await await pool.query(query)
+    console.log(data.rowCount)
     res.status(200).json({ data: data.rows, total: data.rowCount })
   } catch (error) {
     res.status(500).json({ msg: error })
