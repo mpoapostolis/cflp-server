@@ -80,11 +80,11 @@ CREATE TABLE users(
     date_created timestamp NOT NULL DEFAULT NOW()
 );
 
-CRETE TABLE favorites(
+CREATE TABLE favorites (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
     user_id uuid not null REFERENCES users (id),
-    product_id uuid not null REFERENCES products (id),
-)
+    product_id uuid not null REFERENCES products (id)
+);
 
 
 CREATE TABLE orders (

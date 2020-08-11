@@ -13,7 +13,7 @@ read.get('/client', async (req: Request, res: Response) => {
   const { storeSearchTerm = '', limit = 10, offset = 0 } = req.query
 
   const query = qb('stores')
-    .select('*')
+    .select('id', 'name')
     .where('name', 'ilike', `${storeSearchTerm}%`)
     .limit(+limit)
     .offset(+offset)

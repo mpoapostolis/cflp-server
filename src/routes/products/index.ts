@@ -25,7 +25,6 @@ read.get('/', validateToken, async (req: Request, res: Response) => {
     .toQuery()
   try {
     const data = await await pool.query(query)
-    console.log(data.rows)
     res.status(200).json({ data: data.rows, total: data.rowCount })
   } catch (error) {
     res.status(500).json({ msg: error })
@@ -33,7 +32,12 @@ read.get('/', validateToken, async (req: Request, res: Response) => {
 })
 
 read.get('/client', async (req: Request, res: Response) => {
-  const { productSearchTerm = '', limit = 10, offset = 0 } = req.query
+  const {
+    productSearchTerm = '',
+    storeId = '',
+    limit = 10,
+    offset = 0,
+  } = req.query
 
   //   address: "Αγίας Λαύρας, Αιγάλεω"
   // analytics: {purchased: 0, male: 0, female: 0,…}
@@ -56,12 +60,15 @@ read.get('/client', async (req: Request, res: Response) => {
       'address',
       'product_name',
       'products.id as id',
+      'stores.id as store_id',
       'coords',
       'name as store_name',
       'price'
     )
     .innerJoin('stores', 'products.store_id', 'stores.id')
     .where('product_name', 'ilike', `${productSearchTerm}%`)
+    .andWhere({})
+    .orderBy('price', 'asc')
     .limit(+limit)
     .offset(+offset)
     .toQuery()

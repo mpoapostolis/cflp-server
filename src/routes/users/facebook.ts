@@ -43,8 +43,10 @@ async function getUserInfo(id: string, access_token) {
 
 facebook.post('/facebook', async (req: Request, res: Response) => {
   const appToken = await getAppAccessToken()
-  const user = await debugUserToken(req.body.token, appToken.access_token)
 
+  console.log(appToken)
+  const user = await debugUserToken(req.body.token, appToken.access_token)
+  console.log(user)
   try {
     const q1 = qb('users')
       .where({
