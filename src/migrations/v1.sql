@@ -42,6 +42,7 @@ CREATE TYPE item_analytics AS (
 
 CREATE TABLE tags(
     tag_name varchar(48)  PRIMARY KEY,
+    analytics json,
     store_id uuid,
     FOREIGN KEY (store_id) REFERENCES stores(id) ON UPDATE CASCADE
 );
@@ -51,7 +52,6 @@ CREATE TABLE products(
     product_name varchar(48),
     store_id uuid,
     price real,
-    analytics  json,
     description varchar(48),
     images varchar(64),
     tags varchar(48)[],
@@ -63,6 +63,13 @@ CREATE TYPE gender AS ENUM (
     'male',
     'female'
 );
+
+CREATE TYPE order_status AS ENUM (
+    'complete', 
+    'pending', 
+    'canceled'
+);
+
 
 CREATE TABLE users(
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
@@ -92,5 +99,7 @@ CREATE TABLE orders (
     store_id uuid REFERENCES stores (id),
     user_id uuid not null REFERENCES users (id),
     product_id uuid not null REFERENCES products (id),
-    date_created timestamp NOT NULL DEFAULT NOW()
+    date_created timestamp NOT NULL DEFAULT NOW(),
+    status order_status
+    order_id varchar(36)
 )

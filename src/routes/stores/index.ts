@@ -9,7 +9,7 @@ import pool, { qb, st } from '../../utils/pgHelper'
 
 const read = Router()
 
-read.get('/client', async (req: Request, res: Response) => {
+read.get('/client-stores', async (req: Request, res: Response) => {
   const { storeSearchTerm = '', limit = 10, offset = 0 } = req.query
 
   const query = qb('stores')

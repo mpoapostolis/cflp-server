@@ -31,7 +31,7 @@ read.get('/', validateToken, async (req: Request, res: Response) => {
   }
 })
 
-read.get('/client', async (req: Request, res: Response) => {
+read.get('/client-products', async (req: Request, res: Response) => {
   const {
     productSearchTerm = '',
     storeId = '',
@@ -55,6 +55,12 @@ read.get('/client', async (req: Request, res: Response) => {
   // store_id: "4746e2a6-c49b-41f5-be38-11792ba591c0"
   // tags: ["anapsiktika", "coffee"]
 
+  const store = req.query.storeId
+    ? {
+        store_id: req.query.storeId,
+      }
+    : {}
+
   const query = qb('products')
     .select(
       'address',
@@ -67,7 +73,7 @@ read.get('/client', async (req: Request, res: Response) => {
     )
     .innerJoin('stores', 'products.store_id', 'stores.id')
     .where('product_name', 'ilike', `${productSearchTerm}%`)
-    .andWhere({})
+    .andWhere(store)
     .orderBy('price', 'asc')
     .limit(+limit)
     .offset(+offset)
@@ -75,7 +81,6 @@ read.get('/client', async (req: Request, res: Response) => {
 
   try {
     const data = await await pool.query(query)
-    console.log(data.rowCount)
     res.status(200).json({ data: data.rows, total: data.rowCount })
   } catch (error) {
     console.log(error)

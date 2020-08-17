@@ -5,4 +5,7 @@ declare namespace Express {
       store_id?: string
     }
   }
+  export interface Response {
+    sendEventStreamData?: (data: any) => void
+  }
 }

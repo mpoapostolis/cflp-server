@@ -2,9 +2,88 @@ import * as Joi from '@hapi/joi'
 import { Router, Request, Response } from 'express'
 import { makeErrObj } from '../../utils/error'
 import pool, { qb } from '../../utils/pgHelper'
-import { validateToken } from '../../utils/token'
+import { validateToken, UserTypeToken } from '../../utils/token'
+import { v4 as uuidv4 } from 'uuid'
+
+import * as jwt from 'jsonwebtoken'
 
 const router = Router()
+
+router.post('/orders', async (req: Request, res: Response) => {})
+
+let clients = {}
+
+function eventsHandler(req, res) {
+  const token = req.query.token
+  jwt.verify(token, process.env['TOKEN'], (err, user: UserTypeToken) => {
+    if (err) return res.sendStatus(403)
+  })
+
+  res.setHeader('Content-Type', 'text/event-stream')
+  res.setHeader('Cache-Control', 'no-cache')
+
+  // only if you want anyone to access this endpoint
+  res.setHeader('Access-Control-Allow-Origin', '*')
+
+  res.flushHeaders()
+
+  const clientId = req.params.id
+
+  clients[clientId] = res
+
+  req.on('close', () => {
+    console.log(`${clientId} Connection closed`)
+    delete clients[clientId]
+  })
+}
+
+router.get('/listen-orders/:id', eventsHandler)
+
+router.post('/place-order/:id', validateToken, async (req: Request, res) => {
+  try {
+    const order_id = uuidv4()
+    const q1 = qb('orders')
+      .insert(
+        req.body.map((product_id) => ({
+          product_id,
+          user_id: req.user.id,
+          store_id: req.params.id,
+          order_id,
+          status: 'pending',
+        }))
+      )
+      .toQuery()
+
+    await (await pool.query(q1)).rows
+
+    clients[req.params.id].write(`data: new notification \n\n`)
+
+    res.sendStatus(200)
+  } catch (error) {
+    console.log(error)
+  }
+})
+
+router.get(
+  '/orders/pending',
+  validateToken,
+  async (req: Request, res: Response) => {
+    const q1 = qb('orders')
+      .select('order_id', qb.raw('COUNT(*)'))
+      .where({
+        store_id: req.user.store_id,
+        status: 'pending',
+      })
+      .groupBy('order_id')
+      .toQuery()
+    try {
+      const total = await (await pool.query(q1)).rowCount
+      res.status(200).json({ total })
+    } catch (error) {
+      console.log(error)
+    }
+  }
+)
 
 const schema = Joi.object({})
 
