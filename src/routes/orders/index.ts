@@ -6,6 +6,7 @@ import { validateToken, UserTypeToken } from '../../utils/token'
 import { v4 as uuidv4 } from 'uuid'
 
 import * as jwt from 'jsonwebtoken'
+import { composeP } from 'ramda'
 
 const router = Router()
 
@@ -64,27 +65,73 @@ router.post('/place-order/:id', validateToken, async (req: Request, res) => {
   }
 })
 
+router.get('/orders', validateToken, async (req: Request, res: Response) => {
+  const whereObject = {
+    'orders.store_id': req.user.store_id,
+  }
+
+  if (req.query.status) whereObject['status'] = req.query.status
+  const q1 = qb('orders')
+    .select('order_id', 'orders.date_created', 'users.user_name', 'status')
+    .innerJoin('users', 'user_id', 'users.id')
+    .where(whereObject)
+    .groupBy('order_id', 'users.user_name', 'orders.date_created', 'status')
+    .orderBy('orders.date_created', 'desc')
+    .offset(Number(req.query.offset) || 0)
+    .limit(Number(req.query.offset) || 10)
+    .toQuery()
+
+  try {
+    const data = await pool.query(q1)
+    res.status(200).json({ total: data.rowCount, data: data.rows })
+  } catch (error) {
+    console.log(error)
+  }
+})
+
 router.get(
   '/orders/pending',
   validateToken,
   async (req: Request, res: Response) => {
+    const whereObject = {
+      store_id: req.user.store_id,
+    }
+    if (req.query.status) whereObject['status'] = req.query.status
     const q1 = qb('orders')
       .select('order_id', qb.raw('COUNT(*)'))
-      .where({
-        store_id: req.user.store_id,
-        status: 'pending',
-      })
+      .where(whereObject)
       .groupBy('order_id')
       .toQuery()
     try {
-      const total = await (await pool.query(q1)).rowCount
-      res.status(200).json({ total })
+      const totalUnread = await (await pool.query(q1)).rowCount
+      res.status(200).json({ totalUnread })
     } catch (error) {
       console.log(error)
     }
   }
 )
 
+router.get(
+  '/orders/:id',
+  validateToken,
+  async (req: Request, res: Response) => {
+    const whereObject = {
+      store_id: req.user.store_id,
+    }
+    if (req.query.status) whereObject['status'] = req.query.status
+    const q1 = qb('orders')
+      .select('price', 'product_name')
+      .innerJoin('products', 'orders.product_id', 'products.id')
+      .where({ order_id: req.params.id })
+      .toQuery()
+    try {
+      const data = await (await pool.query(q1)).rows
+      res.status(200).json({ data })
+    } catch (error) {
+      console.log(error)
+    }
+  }
+)
 const schema = Joi.object({})
 
 // router.post('/orders', validateToken, async (req: Request, res: Response) => {
