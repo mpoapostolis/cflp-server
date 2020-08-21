@@ -32,34 +32,12 @@ read.get('/', validateToken, async (req: Request, res: Response) => {
 })
 
 read.get('/client-products', async (req: Request, res: Response) => {
-  const {
-    productSearchTerm = '',
-    storeId = '',
-    limit = 10,
-    offset = 0,
-  } = req.query
+  const { productSearchTerm = '', limit = 10, offset = 0 } = req.query
 
-  //   address: "Αγίας Λαύρας, Αιγάλεω"
-  // analytics: {purchased: 0, male: 0, female: 0,…}
-  // coords: {x: 23.6757995, y: 37.9939679}
-  // date_created: "2020-08-06T19:15:10.584Z"
-  // description: null
-  // geom: "0101000020E610000035272F3201AD37400CE313573AFF4240"
-  // id: "4746e2a6-c49b-41f5-be38-11792ba591c0"
-  // image: null
-  // images: null
-  // name: "ALEA IN STYLE"
-  // price: 2.2
-  // product_name: "kafes"
-  // rating: null
-  // store_id: "4746e2a6-c49b-41f5-be38-11792ba591c0"
-  // tags: ["anapsiktika", "coffee"]
+  let extraQuery: Record<string, any> = {}
 
-  const store = req.query.storeId
-    ? {
-        store_id: req.query.storeId,
-      }
-    : {}
+  if (req.query.storeId) extraQuery['store_id'] = req.query.storeId
+  if (req.query.favorites) extraQuery['user_id'] = req.query.favorites
 
   const query = qb('products')
     .select(
@@ -72,12 +50,20 @@ read.get('/client-products', async (req: Request, res: Response) => {
       'price'
     )
     .innerJoin('stores', 'products.store_id', 'stores.id')
+    .modify(
+      (q) =>
+        req.query.favorites &&
+        q.innerJoin('favorites', 'products.id', 'favorites.product_id')
+    )
     .where('product_name', 'ilike', `${productSearchTerm}%`)
-    .andWhere(store)
+    .andWhere(extraQuery)
     .orderBy('price', 'asc')
     .limit(+limit)
     .offset(+offset)
     .toQuery()
+
+  console.log(extraQuery)
+  console.log(`\n\n\n${query}\n\n\n`)
 
   try {
     const data = await await pool.query(query)

@@ -28,42 +28,57 @@ function eventsHandler(req, res) {
 
   res.flushHeaders()
 
-  const clientId = req.params.id
-
-  clients[clientId] = res
-
+  const storeId = req.params.storeId
+  clients[storeId] = res
   req.on('close', () => {
-    console.log(`${clientId} Connection closed`)
-    delete clients[clientId]
+    console.log(`${storeId} Connection closed`)
+    delete clients[storeId]
   })
 }
 
-router.get('/listen-orders/:id', eventsHandler)
+router.get('/listen-orders/:storeId', eventsHandler)
 
-router.post('/place-order/:id', validateToken, async (req: Request, res) => {
-  try {
-    const order_id = uuidv4()
+router.get(
+  '/order/:id/get-status',
+  validateToken,
+  async (req: Request, res) => {
     const q1 = qb('orders')
-      .insert(
-        req.body.map((product_id) => ({
-          product_id,
-          user_id: req.user.id,
-          store_id: req.params.id,
-          order_id,
-          status: 'pending',
-        }))
-      )
+      .select('status')
+      .where({ order_id: req.params.id })
       .toQuery()
-
-    await (await pool.query(q1)).rows
-
-    clients[req.params.id].write(`data: new notification \n\n`)
-
-    res.sendStatus(200)
-  } catch (error) {
-    console.log(error)
+    const [{ status }] = await (await pool.query(q1)).rows
+    res.status(200).json({ status })
   }
-})
+)
+
+router.post(
+  '/order/:id/place-order',
+  validateToken,
+  async (req: Request, res) => {
+    try {
+      const order_id = uuidv4()
+      const q1 = qb('orders')
+        .insert(
+          req.body.map((product_id) => ({
+            product_id,
+            user_id: req.user.id,
+            store_id: req.params.id,
+            order_id,
+            status: 'pending',
+          }))
+        )
+        .toQuery()
+
+      await (await pool.query(q1)).rows
+
+      clients[req.params.id]?.write(`data: new notification \n\n`)
+
+      res.status(200).json({ order_id })
+    } catch (error) {
+      console.log(error)
+    }
+  }
+)
 
 router.get('/orders', validateToken, async (req: Request, res: Response) => {
   const whereObject = {
@@ -95,8 +110,9 @@ router.get(
   async (req: Request, res: Response) => {
     const whereObject = {
       store_id: req.user.store_id,
+      status: 'pending',
     }
-    if (req.query.status) whereObject['status'] = req.query.status
+    if (req.query.status) whereObject['status'] = req.query.status as string
     const q1 = qb('orders')
       .select('order_id', qb.raw('COUNT(*)'))
       .where(whereObject)
@@ -135,60 +151,55 @@ router.get(
 const schema = Joi.object({})
 
 // router.post('/orders', validateToken, async (req: Request, res: Response) => {
-router.post('/orders', async (req: Request, res: Response) => {
-  //   const error = schema.validate(req.body).error
-  //   if (error) return res.status(400).json(makeErrObj(error.details))
+router.post(
+  '/orders/:id/approve',
+  validateToken,
+  async (req: Request, res: Response) => {
+    //   const error = schema.validate(req.body).error
+    //   if (error) return res.status(400).json(makeErrObj(error.details))
 
-  const client = await pool.connect()
+    const client = await pool.connect()
 
-  const q1 = qb('products')
-    .select()
-    .where({ id: req.body.product_id })
-    .toQuery()
-
-  const q2 = qb('users').select().where({ id: req.body.user_id }).toQuery()
-
-  try {
-    await client.query('BEGIN')
-    const product = (await client.query(q1)).rows[0]
-    const user = (await client.query(q2)).rows[0]
-
-    const q4 = qb('products')
-      .update({
-        analytics: JSON.stringify({
-          purchased: product.analytics.purchased + 1,
-          [user?.groups?.gender]:
-            product.analytics[user?.groups?.gender] + 1 ?? 1,
-          ageGroup: {
-            [user.groups.ageGroup]:
-              product.analytics.ageGroup[user?.groups?.ageGroup] + 1 || 1,
-          },
-        }),
-      })
-      .toQuery()
-
-    await client.query(q4)
-
-    const q5 = qb('users')
-      .update({
-        loyalty_points: user.loyalty_points + product.price * 90 ?? 1,
-      })
+    const q1 = qb('orders')
+      .select('price', 'tags')
+      .innerJoin('products', 'orders.product_id', 'products.id')
       .where({
-        id: req.body.user_id,
+        order_id: req.params.id,
       })
       .toQuery()
 
-    await client.query(q5)
+    const q2 = qb('orders')
+      .update({
+        status: 'complete',
+      })
+      .where({ order_id: req.params.id })
+      .toQuery()
 
-    await client.query('COMMIT')
-    res.status(200).json({ msg: 'we are cool' })
-  } catch (e) {
-    console.log(e)
-    await client.query('ROLLBACK')
-    res.status(500).json({ msg: e })
-  } finally {
-    client.release()
+    try {
+      await client.query('BEGIN')
+      const orders = (await client.query(q1)).rows
+
+      await client.query(q2)
+      const loyalty_points =
+        orders.reduce((acc, curr) => acc + curr.price, 0) * 90
+      const q3 = qb('users')
+        .increment('loyalty_points', loyalty_points)
+        .where({
+          id: req.user.id,
+        })
+        .toQuery()
+      await client.query(q3)
+
+      await client.query('COMMIT')
+      res.status(200).json({ msg: 'we are cool' })
+    } catch (e) {
+      console.log(e)
+      await client.query('ROLLBACK')
+      res.status(500).json({ msg: e })
+    } finally {
+      client.release()
+    }
   }
-})
+)
 
 export default router
