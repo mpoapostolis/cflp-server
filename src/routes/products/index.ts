@@ -62,9 +62,6 @@ read.get('/client-products', async (req: Request, res: Response) => {
     .offset(+offset)
     .toQuery()
 
-  console.log(extraQuery)
-  console.log(`\n\n\n${query}\n\n\n`)
-
   try {
     const data = await await pool.query(query)
     res.status(200).json({ data: data.rows, total: data.rowCount })

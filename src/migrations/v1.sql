@@ -20,29 +20,20 @@ CREATE TABLE stores (
 
 CREATE INDEX global_poitns_gix ON stores USING GIST (geom);
 
-CREATE TYPE age_group AS (
-    unkown int,
-   "13-17" int,
-   "18-24" int,
-   "25-34" int,
-   "35-44" int,
-   "45-54" int,
-   "55-64" int,
-   "65+" int
-);
-
-CREATE TYPE item_analytics AS (
-    purchased int,
-    male int,
-    female int,
-    age_group json
-);
-
-
 
 CREATE TABLE tags(
     tag_name varchar(48)  PRIMARY KEY,
-    analytics json,
+    purchased int,
+    male int DEFAULT 0,
+    female int DEFAULT 0,
+    group_age_unkown int DEFAULT 0,
+    group_age_13_17 int DEFAULT 0,
+    group_age_18_24 int DEFAULT 0,
+    group_age_25_34 int DEFAULT 0,
+    group_age_35_44 int DEFAULT 0,
+    group_age_45_54 int DEFAULT 0,
+    group_age_55_64 int DEFAULT 0,
+    group_age_65_plus int DEFAULT 0,
     store_id uuid,
     FOREIGN KEY (store_id) REFERENCES stores(id) ON UPDATE CASCADE
 );

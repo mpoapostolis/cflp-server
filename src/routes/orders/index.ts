@@ -5,6 +5,7 @@ import pool, { qb } from '../../utils/pgHelper'
 import { validateToken, UserTypeToken } from '../../utils/token'
 import { v4 as uuidv4 } from 'uuid'
 
+import * as R from 'ramda'
 import * as jwt from 'jsonwebtoken'
 import { composeP } from 'ramda'
 
@@ -150,19 +151,16 @@ router.get(
 )
 const schema = Joi.object({})
 
-// router.post('/orders', validateToken, async (req: Request, res: Response) => {
 router.post(
   '/orders/:id/approve',
   validateToken,
   async (req: Request, res: Response) => {
-    //   const error = schema.validate(req.body).error
-    //   if (error) return res.status(400).json(makeErrObj(error.details))
-
     const client = await pool.connect()
 
     const q1 = qb('orders')
-      .select('price', 'tags')
+      .select('price', 'users.groups', 'tags')
       .innerJoin('products', 'orders.product_id', 'products.id')
+      .innerJoin('users', 'orders.user_id', 'users.id')
       .where({
         order_id: req.params.id,
       })
@@ -189,6 +187,21 @@ router.post(
         })
         .toQuery()
       await client.query(q3)
+
+      const tags = R.uniq(
+        orders.reduce((acc, curr) => [...acc, ...curr.tags], [])
+      )
+      const { ageGroup, gender } = orders[0].groups
+
+      tags.forEach(async (tag_name) => {
+        await client.query(
+          qb('tags')
+            .increment(ageGroup, 1)
+            .increment(gender, 1)
+            .where({ tag_name })
+            .toQuery()
+        )
+      })
 
       await client.query('COMMIT')
       res.status(200).json({ msg: 'we are cool' })
