@@ -196,8 +196,7 @@ router.post(
       tags.forEach(async (tag_name) => {
         await client.query(
           qb('tags')
-            .increment(ageGroup, 1)
-            .increment(gender, 1)
+            .increment(`${gender}_${ageGroup}`, 1)
             .where({ tag_name })
             .toQuery()
         )

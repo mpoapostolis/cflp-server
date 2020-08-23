@@ -57,8 +57,7 @@ favorites.delete(
       .toQuery()
 
     try {
-      const x = await await pool.query(query)
-      console.log(x)
+      await await pool.query(query)
       res.status(200).json({ msg: 'ok' })
     } catch (error) {
       res.status(500).json({ msg: error })
