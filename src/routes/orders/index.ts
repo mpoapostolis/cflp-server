@@ -1,13 +1,13 @@
 import * as Joi from '@hapi/joi'
 import { Router, Request, Response } from 'express'
-import { makeErrObj } from '../../utils/error'
+
 import pool, { qb } from '../../utils/pgHelper'
 import { validateToken, UserTypeToken } from '../../utils/token'
 import { v4 as uuidv4 } from 'uuid'
+import { groupByAge } from '../../utils'
 
 import * as R from 'ramda'
 import * as jwt from 'jsonwebtoken'
-import { composeP } from 'ramda'
 
 const router = Router()
 
@@ -158,7 +158,7 @@ router.post(
     const client = await pool.connect()
 
     const q1 = qb('orders')
-      .select('price', 'users.groups', 'tags')
+      .select('price', 'users.birthday', 'users.gender', 'tags')
       .innerJoin('products', 'orders.product_id', 'products.id')
       .innerJoin('users', 'orders.user_id', 'users.id')
       .where({
@@ -189,13 +189,15 @@ router.post(
       await client.query(q3)
 
       const tags = R.uniq(
-        orders.reduce((acc, curr) => [...acc, ...curr.tags], [])
+        orders.reduce((acc, curr) => [...acc, ...curr?.tags], [])
       )
-      const { ageGroup, gender } = orders[0].groups
+      const { birthday, gender } = orders[0]
+      const ageGroup = groupByAge(birthday)
 
       tags.forEach(async (tag_name) => {
         await client.query(
           qb('tags')
+            .increment(`purchased`, 1)
             .increment(`${gender}_${ageGroup}`, 1)
             .where({ tag_name })
             .toQuery()

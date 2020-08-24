@@ -41,14 +41,11 @@ router.post('/register', async (req: Request, res: Response) => {
   bcrypt.hash(req.body.password, 10, async (err, password) => {
     if (err) return res.status(500).send(err)
     try {
-      const { birthday, gender, ...rest } = req.body
-      const ageGroup = groupByAge(birthday)
       const q2 = qb('users')
         .insert({
-          ...rest,
           loyalty_points: 0,
           password,
-          groups: JSON.stringify({ ageGroup, gender }),
+          ...req.body,
         })
         .toQuery()
       await pool.query(q2)

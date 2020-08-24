@@ -32,6 +32,7 @@ router.post('/', async (req: Request, res: Response) => {
     .into('stores')
     .toQuery()
 
+  console.log(query)
   await pool.query(query)
   res.status(201).json({
     msg: `store ${req.body.name} has created successfully`,

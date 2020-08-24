@@ -57,24 +57,18 @@ facebook.post('/facebook', async (req: Request, res: Response) => {
       const response = await getLoginResponse(_user.rows[0])
       return res.status(200).json(response)
     } else {
-      const { birthday, gender, ...rest } = await getUserInfo(
-        user.data.user_id,
-        req.body.token
-      )
-
-      const ageGroup = groupByAge(birthday)
+      const infos = await getUserInfo(user.data.user_id, req.body.token)
 
       const q2 = qb('users')
         .insert({
-          ...rest,
           loyalty_points: 0,
-          groups: JSON.stringify({ ageGroup, gender }),
+          ...infos,
         })
         .toQuery()
       await pool.query(q2)
       const _user = await pool.query(q1)
       const response = await getLoginResponse(_user.rows[0])
-      return res.status(200).json({ ...response, groups: { ageGroup, gender } })
+      return res.status(200).json(response)
     }
   } catch (error) {
     console.log(error)

@@ -1,5 +1,6 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "postgis";
+CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;
 
 CREATE TYPE votes AS (
     sum int,
@@ -23,7 +24,7 @@ CREATE INDEX global_poitns_gix ON stores USING GIST (geom);
 
 CREATE TABLE tags(
     tag_name varchar(48)  PRIMARY KEY,
-    purchased int,
+    purchased int DEFAULT 0,
     male_age_unkown int DEFAULT 0,
     male_age_13_17 int DEFAULT 0,
     male_age_18_24 int DEFAULT 0,
@@ -53,7 +54,7 @@ CREATE TABLE products(
     price real,
     description varchar(48),
     images varchar(64),
-    tags varchar(48)[],
+    tags varchar(48)[] DEFAULT '{}',
     date_created timestamp NOT NULL DEFAULT NOW(),
     FOREIGN KEY (store_id) REFERENCES stores(id) ON UPDATE CASCADE
 );
@@ -78,13 +79,24 @@ CREATE TABLE users(
     avatar varchar(256),
     email varchar(64),
     gender gender,
+    birthday timestamp,
     loyalty_points real,
-    groups json,
+    groups jsonb,
     user_name varchar(64),
     password varchar(64),
     fb_id varchar(64),
     date_created timestamp NOT NULL DEFAULT NOW()
 );
+
+CREATE TABLE geo_log_events(
+    id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
+    user_id uuid not null REFERENCES users (id),
+    geom geography (point) NOT NULL,
+    date_created timestamp NOT NULL DEFAULT NOW()
+);
+
+
+CREATE INDEX geo_log_events1 ON geo_log_events USING GIST (geom);
 
 CREATE TABLE favorites (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
@@ -99,6 +111,6 @@ CREATE TABLE orders (
     user_id uuid not null REFERENCES users (id),
     product_id uuid not null REFERENCES products (id),
     date_created timestamp NOT NULL DEFAULT NOW(),
-    status order_status
+    status order_status,
     order_id varchar(36)
 )

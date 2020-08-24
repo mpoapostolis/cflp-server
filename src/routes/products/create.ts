@@ -3,7 +3,6 @@ import { Router, Request, Response } from 'express'
 import { makeErrObj } from '../../utils/error'
 import pool, { qb } from '../../utils/pgHelper'
 import { validateToken } from '../../utils/token'
-import { analytics } from '../../utils'
 
 const router = Router()
 
@@ -24,7 +23,6 @@ router.post('/', validateToken, async (req: Request, res: Response) => {
     .insert({
       ...req.body,
       store_id: req.user.store_id,
-      analytics: JSON.stringify(analytics),
     })
     .toQuery()
   const q2 = (tag_name: string) =>

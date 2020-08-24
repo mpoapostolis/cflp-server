@@ -2,7 +2,7 @@ import { differenceInCalendarYears } from 'date-fns'
 
 export type Coords = [number, number]
 
-export function groupByAge(date: Date) {
+export function groupByAge(date: any) {
   const age = differenceInCalendarYears(new Date(), new Date(date))
 
   switch (true) {

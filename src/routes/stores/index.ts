@@ -77,9 +77,11 @@ read.get('/', async (req: Request, res: Response) => {
     .into('stores')
     .toQuery()
 
+  console.log(query)
+
   const data = await pool.query(query)
 
-  res.status(200).json({ data: data.rows, total: data.rowCount })
+  res.status(200).json({ data: query })
 })
 
 const stores = Router()

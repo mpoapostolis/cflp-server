@@ -5,8 +5,9 @@ import products from './products'
 import upload from './uploads'
 import tags from './tags'
 import orders from './orders'
+import geolog from './geolog'
 
 const router = Router()
-router.use('/api', users, orders, stores, tags, products, upload)
+router.use('/api', users, orders, geolog, stores, tags, products, upload)
 
 export default router
