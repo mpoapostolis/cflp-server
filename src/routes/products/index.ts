@@ -34,31 +34,58 @@ read.get('/', validateToken, async (req: Request, res: Response) => {
 })
 
 read.get('/client-products', async (req: Request, res: Response) => {
-  const { productSearchTerm = '', limit = 10, offset = 0 } = req.query
+  const { productSearchTerm = '', limit = 10, offset = 0, tags } = req.query
 
   let extraQuery: Record<string, any> = {}
 
   if (req.query.storeId) extraQuery['store_id'] = req.query.storeId
   if (req.query.favorites) extraQuery['user_id'] = req.query.favorites
+  if (tags) extraQuery['has_tag'] = 't'
 
-  const query = qb('products')
+  const _tags = Array.isArray(tags) ? tags : [tags]
+
+  console.log(_tags)
+
+  const tableName = tags ? 't1' : 'products'
+
+  const query = qb(tableName)
+    .modify((q) => {
+      if (tags)
+        q.with(
+          't1',
+          qb('products').select(
+            'id',
+            'product_name',
+            'store_id',
+            'price',
+            'description',
+            'images',
+            'tags',
+            qb.raw(
+              `tags::text[] && ARRAY[${_tags.map((e) => `'${e}'`)}] as has_tag`
+            )
+          )
+        )
+    })
     .select(
       'address',
       'product_name',
-      'products.id as id',
+      `${tableName}.id as id`,
       'stores.id as store_id',
       'coords',
+      'tags',
       'name as store_name',
       'price'
     )
-    .innerJoin('stores', 'products.store_id', 'stores.id')
-    .modify(
-      (q) =>
-        req.query.favorites &&
-        q.innerJoin('favorites', 'products.id', 'favorites.product_id')
-    )
+    .innerJoin('stores', `${tableName}.store_id`, 'stores.id')
+    .modify((q) => {
+      req.query.favorites &&
+        q.innerJoin('favorites', `${tableName}.id`, 'favorites.product_id')
+    })
+
     .where('product_name', 'ilike', `${productSearchTerm}%`)
     .andWhere(extraQuery)
+
     .orderBy('price', 'asc')
     .limit(+limit)
     .offset(+offset)

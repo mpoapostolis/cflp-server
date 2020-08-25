@@ -7,7 +7,7 @@ import pool, { qb } from '../../utils/pgHelper'
 const router = Router()
 
 const schema = Joi.object({
-  product_name: Joi.string().max(30),
+  product_name: Joi.string().max(128),
   description: Joi.string().max(30),
   price: Joi.number().min(0),
   images: Joi.array().items(Joi.string()),

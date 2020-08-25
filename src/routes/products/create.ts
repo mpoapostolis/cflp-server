@@ -7,7 +7,7 @@ import { validateToken } from '../../utils/token'
 const router = Router()
 
 const schema = Joi.object({
-  product_name: Joi.string().max(30).required(),
+  product_name: Joi.string().max(128).required(),
   description: Joi.string().max(30),
   price: Joi.number().min(0).required(),
   images: Joi.array().items(Joi.string()),
