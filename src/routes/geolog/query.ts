@@ -1,4 +1,4 @@
-const query = (lat, long) => `with t0 as 
+const query = (lng, lat) => `with t0 as 
 (   select 
         users.id, 
         first_name, 
@@ -6,7 +6,7 @@ const query = (lat, long) => `with t0 as
         geo_log_events.date_created,
         (Select  Cast(extract(year FROM AGE(NOW(), birthday)) as int)) as age
     from geo_log_events inner join users on user_id = users.id 
-    where ST_DWithin("geom", geography(ST_MakePoint(${long}, ${lat})), 1500) 
+    where ST_DWithin("geom", geography(ST_MakePoint(${lng}, ${lat})), 1500) 
     AND geo_log_events.date_created > NOW() - INTERVAL '180 seconds'
     
 ), t1 as (

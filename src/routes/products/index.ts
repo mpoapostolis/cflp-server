@@ -9,17 +9,19 @@ const read = Router()
 
 read.get('/', validateToken, async (req: Request, res: Response) => {
   const {
-    productSearchTerm = '',
+    searchTerm = '',
     limit = 10,
     offset = 0,
     store_id = req.user.store_id,
   } = req.query
   const query = qb('products')
     .select('*')
-    .where('product_name', 'ilike', `${productSearchTerm}%`)
+    .where('product_name', 'ilike', `${searchTerm}%`)
     .andWhere({
       store_id,
     })
+    .orderBy('date_created', 'desc')
+
     .limit(+limit)
     .offset(+offset)
     .toQuery()
