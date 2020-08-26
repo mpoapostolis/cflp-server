@@ -158,7 +158,7 @@ router.post(
     const client = await pool.connect()
 
     const q1 = qb('orders')
-      .select('price', 'users.birthday', 'users.gender', 'tags')
+      .select('price', 'product_id', 'users.birthday', 'users.gender', 'tags')
       .innerJoin('products', 'orders.product_id', 'products.id')
       .innerJoin('users', 'orders.user_id', 'users.id')
       .where({
@@ -193,6 +193,16 @@ router.post(
       )
       const { birthday, gender } = orders[0]
       const ageGroup = groupByAge(birthday)
+
+      orders.forEach(async (o) => {
+        console.log(o)
+        await client.query(
+          qb('products')
+            .increment('purchased', 1)
+            .where({ id: o.product_id })
+            .toQuery()
+        )
+      })
 
       tags.forEach(async (tag_name) => {
         await client.query(

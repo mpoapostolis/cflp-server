@@ -12,6 +12,7 @@ read.get('/', validateToken, async (req: Request, res: Response) => {
     searchTerm = '',
     limit = 10,
     offset = 0,
+    orderBy = 'date_created',
     store_id = req.user.store_id,
   } = req.query
   const query = qb('products')
@@ -20,10 +21,26 @@ read.get('/', validateToken, async (req: Request, res: Response) => {
     .andWhere({
       store_id,
     })
-    .orderBy('date_created', 'desc')
-
+    .orderBy(`${orderBy}`, 'desc')
     .limit(+limit)
     .offset(+offset)
+    .toQuery()
+  try {
+    const data = await await pool.query(query)
+    res.status(200).json({ data: data.rows, total: data.rowCount })
+  } catch (error) {
+    res.status(500).json({ msg: error })
+  }
+})
+
+read.get('/all', validateToken, async (req: Request, res: Response) => {
+  const { store_id = req.user.store_id } = req.query
+  const query = qb('products')
+    .select('*')
+    .andWhere({
+      store_id,
+    })
+    .orderBy(`purchased`, 'desc')
     .toQuery()
   try {
     const data = await await pool.query(query)
@@ -43,8 +60,6 @@ read.get('/client-products', async (req: Request, res: Response) => {
   if (tags) extraQuery['has_tag'] = 't'
 
   const _tags = Array.isArray(tags) ? tags : [tags]
-
-  console.log(_tags)
 
   const tableName = tags ? 't1' : 'products'
 

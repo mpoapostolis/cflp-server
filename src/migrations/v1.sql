@@ -50,6 +50,7 @@ CREATE TABLE tags(
 CREATE TABLE products(
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
     product_name varchar(48),
+    purchased int DEFAULT 0,
     store_id uuid,
     price real,
     description varchar(48),

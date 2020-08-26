@@ -5,6 +5,21 @@ import q from './query'
 
 const geolog = Router()
 
+geolog.get('/geolog', validateToken, async (req: Request, res: Response) => {
+  const query = qb('geo_log_events')
+    .select('groups')
+    .innerJoin('users', 'user_id', 'users.id')
+    .whereRaw(`geo_log_events.date_created > NOW() - INTERVAL '960 hours'`)
+    .toQuery()
+  try {
+    const countNearMe = await (await pool.query(query)).rowCount
+    res.status(200).json({ countNearMe })
+  } catch (error) {
+    console.log(error)
+    res.status(500).json({ msg: error })
+  }
+})
+
 geolog.get(
   '/geolog/near',
   validateToken,
@@ -24,13 +39,6 @@ geolog.post(
   '/geolog/:id',
   validateToken,
   async (req: Request, res: Response) => {
-    const q1 = qb('geo_log_events')
-      .select('*')
-      .whereRaw(`date_created > NOW() - INTERVAL '30 hours'`)
-      .toQuery()
-
-    console.log(req.body)
-
     const query = qb('geo_log_events')
       .insert({
         user_id: req.params.id,
@@ -40,8 +48,6 @@ geolog.post(
       })
       .toQuery()
     try {
-      const found = await pool.query(q1)
-      // if (found.rowCount > 0) return res.status(200).json({ msg: 'ok' })
       await pool.query(query)
       res.status(200).json({ msg: 'ok' })
     } catch (error) {
