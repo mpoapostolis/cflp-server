@@ -64,6 +64,12 @@ CREATE TYPE gender AS ENUM (
     'female'
 );
 
+CREATE TYPE paid_with AS ENUM (
+    'cash',
+    'loyalty_points'
+);
+
+
 CREATE TYPE order_status AS ENUM (
     'complete', 
     'pending', 
@@ -112,5 +118,6 @@ CREATE TABLE orders (
     product_id uuid not null REFERENCES products (id),
     date_created timestamp NOT NULL DEFAULT NOW(),
     status order_status,
+    paid_with paid_with NOT NULL,
     order_id varchar(36)
 )

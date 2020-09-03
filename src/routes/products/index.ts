@@ -101,7 +101,7 @@ read.get('/client-products', async (req: Request, res: Response) => {
     .where('product_name', 'ilike', `${productSearchTerm}%`)
     .andWhere(extraQuery)
 
-    .orderBy('price', 'asc')
+    .orderBy('products.date_created', 'asc')
     .limit(+limit)
     .offset(+offset)
     .toQuery()

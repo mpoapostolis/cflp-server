@@ -8,6 +8,7 @@ import { groupByAge } from '../../utils'
 
 import * as R from 'ramda'
 import * as jwt from 'jsonwebtoken'
+import users from '../users'
 
 const router = Router()
 
@@ -56,13 +57,48 @@ router.post(
   '/order/:id/place-order',
   validateToken,
   async (req: Request, res) => {
+    const [{ paid_with }] = req.body
     try {
+      if (paid_with === 'loyalty_points') {
+        const q1 = qb('users')
+          .select('loyalty_points')
+          .where({
+            id: req.user.id,
+          })
+          .toQuery()
+
+        const [user] = await (await pool.query(q1)).rows
+
+        const q2 = qb('products')
+          .select('id', 'price')
+          .whereIn(
+            'id',
+            req.body.map((o) => o.product_id)
+          )
+          .toQuery()
+        const products = await (await pool.query(q2)).rows.reduce(
+          (acc, curr) => ({ ...acc, [curr.id]: curr.price }),
+          {}
+        )
+
+        const totalSlourps =
+          req.body.reduce((acc, curr) => acc + products[curr.product_id], 0) *
+          90
+
+        if (totalSlourps > user?.loyalty_points)
+          return res.status(400).json({
+            msg: 'inefficient slourps points',
+          })
+      }
+
       const order_id = uuidv4()
-      const q1 = qb('orders')
+      const q3 = qb('orders')
         .insert(
-          req.body.map((product_id) => ({
-            product_id,
+          req.body.map((obj) => ({
+            product_id: obj.product_id,
             user_id: req.user.id,
+            quantity: obj.quantity,
+            paid_with: obj.paid_with,
             store_id: req.params.id,
             order_id,
             status: 'pending',
@@ -70,7 +106,7 @@ router.post(
         )
         .toQuery()
 
-      await (await pool.query(q1)).rows
+      await (await pool.query(q3)).rows
 
       clients[req.params.id]?.write(`data: new notification \n\n`)
 
@@ -88,10 +124,22 @@ router.get('/orders', validateToken, async (req: Request, res: Response) => {
 
   if (req.query.status) whereObject['status'] = req.query.status
   const q1 = qb('orders')
-    .select('order_id', 'orders.date_created', 'users.user_name', 'status')
+    .select(
+      'order_id',
+      'paid_with',
+      'orders.date_created',
+      'users.user_name',
+      'status'
+    )
     .innerJoin('users', 'user_id', 'users.id')
     .where(whereObject)
-    .groupBy('order_id', 'users.user_name', 'orders.date_created', 'status')
+    .groupBy(
+      'order_id',
+      'paid_with',
+      'users.user_name',
+      'orders.date_created',
+      'status'
+    )
     .orderBy('orders.date_created', 'desc')
     .offset(Number(req.query.offset) || 0)
     .limit(Number(req.query.offset) || 10)
@@ -149,7 +197,6 @@ router.get(
     }
   }
 )
-const schema = Joi.object({})
 
 router.post(
   '/orders/:id/approve',
@@ -163,6 +210,7 @@ router.post(
         'product_id',
         'user_id',
         'users.birthday',
+        'orders.paid_with',
         'users.gender',
         'tags'
       )
@@ -185,8 +233,10 @@ router.post(
       const orders = (await client.query(q1)).rows
 
       await client.query(q2)
+      const sign = orders[0].paid_with === 'cash' ? 1 : -1
       const loyalty_points =
-        orders.reduce((acc, curr) => acc + curr.price, 0) * 90
+        sign * orders.reduce((acc, curr) => acc + curr.price, 0) * 90
+
       const q3 = qb('users')
         .increment('loyalty_points', loyalty_points)
         .where({
@@ -202,7 +252,6 @@ router.post(
       const ageGroup = groupByAge(birthday)
 
       orders.forEach(async (o) => {
-        console.log(o)
         await client.query(
           qb('products')
             .increment('purchased', 1)
