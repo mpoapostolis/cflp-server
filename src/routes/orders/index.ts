@@ -158,7 +158,14 @@ router.post(
     const client = await pool.connect()
 
     const q1 = qb('orders')
-      .select('price', 'product_id', 'users.birthday', 'users.gender', 'tags')
+      .select(
+        'price',
+        'product_id',
+        'user_id',
+        'users.birthday',
+        'users.gender',
+        'tags'
+      )
       .innerJoin('products', 'orders.product_id', 'products.id')
       .innerJoin('users', 'orders.user_id', 'users.id')
       .where({
@@ -183,7 +190,7 @@ router.post(
       const q3 = qb('users')
         .increment('loyalty_points', loyalty_points)
         .where({
-          id: req.user.id,
+          id: orders[0].user_id,
         })
         .toQuery()
       await client.query(q3)

@@ -9,7 +9,7 @@ geolog.get('/geolog', validateToken, async (req: Request, res: Response) => {
   const query = qb('geo_log_events')
     .select('groups')
     .innerJoin('users', 'user_id', 'users.id')
-    .whereRaw(`geo_log_events.date_created > NOW() - INTERVAL '960 hours'`)
+    .whereRaw(`geo_log_events.date_created > NOW() - INTERVAL '1800 hours'`)
     .toQuery()
   try {
     const countNearMe = await (await pool.query(query)).rowCount

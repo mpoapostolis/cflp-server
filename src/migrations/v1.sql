@@ -33,7 +33,6 @@ CREATE TABLE tags(
     male_age_45_54 int DEFAULT 0,
     male_age_55_64 int DEFAULT 0,
     male_age_65_plus int DEFAULT 0,
-
     female_age_unkown int DEFAULT 0,
     female_age_13_17 int DEFAULT 0,
     female_age_18_24 int DEFAULT 0,
@@ -81,7 +80,7 @@ CREATE TABLE users(
     email varchar(64),
     gender gender,
     birthday timestamp,
-    loyalty_points real,
+    loyalty_points real DEFAULT 0,
     groups jsonb,
     user_name varchar(64),
     password varchar(64),
