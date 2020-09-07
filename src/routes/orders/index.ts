@@ -83,7 +83,7 @@ router.post(
 
         const totalSlourps =
           req.body.reduce((acc, curr) => acc + products[curr.product_id], 0) *
-          90
+          300
 
         if (totalSlourps > user?.loyalty_points)
           return res.status(400).json({
@@ -233,10 +233,23 @@ router.post(
       const orders = (await client.query(q1)).rows
 
       await client.query(q2)
-      const sign = orders[0].paid_with === 'cash' ? 1 : -1
-      const loyalty_points =
-        sign * orders.reduce((acc, curr) => acc + curr.price, 0) * 90
+      const isCash = orders[0].paid_with === 'cash'
+      const totalPrice = orders.reduce((acc, curr) => acc + curr.price, 0)
+      const loyalty_points = isCash ? totalPrice * 15 : -totalPrice * 300
 
+      console.log(loyalty_points)
+
+      await client.query(
+        qb('stores')
+          .increment(
+            isCash ? 'debits' : 'credits',
+            isCash ? totalPrice * 0.075 : totalPrice
+          )
+          .where({
+            id: req.user.store_id,
+          })
+          .toQuery()
+      )
       const q3 = qb('users')
         .increment('loyalty_points', loyalty_points)
         .where({

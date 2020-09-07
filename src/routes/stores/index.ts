@@ -28,6 +28,21 @@ read.get('/client-stores', async (req: Request, res: Response) => {
   }
 })
 
+read.get('/debits-credits', validateToken, async (req: Request, res) => {
+  const q1 = qb('stores')
+    .select('debits', 'credits')
+    .where({
+      id: req.user.store_id,
+    })
+    .toQuery()
+
+  try {
+    const [store] = (await pool.query(q1)).rows
+    res.status(200).json(store)
+  } catch (error) {}
+  res.json({})
+})
+
 read.get('/:id', validateToken, async (req: Request, res: Response) => {
   const { id = '' } = req.params
   try {

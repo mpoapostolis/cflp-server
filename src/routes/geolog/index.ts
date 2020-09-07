@@ -9,7 +9,7 @@ geolog.get('/geolog', validateToken, async (req: Request, res: Response) => {
   const query = qb('geo_log_events')
     .select('groups')
     .innerJoin('users', 'user_id', 'users.id')
-    .whereRaw(`geo_log_events.date_created > NOW() - INTERVAL '1800 hours'`)
+    .whereRaw(`geo_log_events.date_created > NOW() - INTERVAL '180 seconds'`)
     .toQuery()
   try {
     const countNearMe = await (await pool.query(query)).rowCount
@@ -39,15 +39,24 @@ geolog.post(
   '/geolog/:id',
   validateToken,
   async (req: Request, res: Response) => {
-    const query = qb('geo_log_events')
-      .insert({
-        user_id: req.params.id,
-        geom: st.geomFromText(
-          `POINT(${req.body.longitude} ${req.body.latitude})`
-        ),
-      })
-      .toQuery()
     try {
+      const q1 = await qb('geo_log_events')
+        .where({ user_id: req.params.id })
+        .andWhereRaw(
+          `geo_log_events.date_created > NOW() - INTERVAL '180 seconds'`
+        )
+        .toQuery()
+      const found = await (await pool.query(q1)).rowCount
+      if (found > 0) return res.status(200).json({ msg: 'ok' })
+
+      const query = qb('geo_log_events')
+        .insert({
+          user_id: req.params.id,
+          geom: st.geomFromText(
+            `POINT(${req.body.longitude} ${req.body.latitude})`
+          ),
+        })
+        .toQuery()
       await pool.query(query)
       res.status(200).json({ msg: 'ok' })
     } catch (error) {

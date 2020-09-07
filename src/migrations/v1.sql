@@ -3,8 +3,8 @@ CREATE EXTENSION IF NOT EXISTS "postgis";
 CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;
 
 CREATE TYPE votes AS (
-    sum int,
-    votes int
+    sum real,
+    votes real
 );
 
 CREATE TABLE stores (
@@ -16,6 +16,8 @@ CREATE TABLE stores (
     description varchar(64),
     address varchar(64),
     rating votes,
+    debits real DEFAULT 0,
+    credits real DEFAULT 0,
     date_created timestamp NOT NULL DEFAULT NOW()
 );
 
