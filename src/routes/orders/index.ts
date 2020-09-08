@@ -237,8 +237,6 @@ router.post(
       const totalPrice = orders.reduce((acc, curr) => acc + curr.price, 0)
       const loyalty_points = isCash ? totalPrice * 15 : -totalPrice * 300
 
-      console.log(loyalty_points)
-
       await client.query(
         qb('stores')
           .increment(

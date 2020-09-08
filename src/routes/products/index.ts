@@ -75,6 +75,7 @@ read.get('/client-products', async (req: Request, res: Response) => {
             'price',
             'description',
             'images',
+            'date_created',
             'tags',
             qb.raw(
               `tags::text[] && ARRAY[${_tags.map((e) => `'${e}'`)}] as has_tag`
@@ -101,7 +102,7 @@ read.get('/client-products', async (req: Request, res: Response) => {
     .where('product_name', 'ilike', `${productSearchTerm}%`)
     .andWhere(extraQuery)
 
-    .orderBy('products.date_created', 'asc')
+    .orderBy(`${tableName}.date_created`, 'asc')
     .limit(+limit)
     .offset(+offset)
     .toQuery()

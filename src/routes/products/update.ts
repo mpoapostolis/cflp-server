@@ -10,7 +10,7 @@ const schema = Joi.object({
   product_name: Joi.string().max(128),
   description: Joi.string().max(30),
   price: Joi.number().min(0),
-  images: Joi.array().items(Joi.string()),
+  images: Joi.string(),
   tags: Joi.array().items(Joi.string()),
 })
 
@@ -19,7 +19,6 @@ router.patch('/:id', validateToken, async (req: Request, res: Response) => {
   if (error) return res.status(400).json(makeErrObj(error.details))
 
   const { id, tags, ...rest } = req.body
-
   const q1 = qb('products')
     .where({ id: req.params.id })
     .update({ ...rest, tags })

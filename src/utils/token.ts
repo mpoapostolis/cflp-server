@@ -27,8 +27,8 @@ export function validateToken(req: Request, res: Response, next: NextFunction) {
 
 export async function getLoginResponse(obj: Record<string, any>) {
   const infos = R.omit(['password', 'fbId'], obj)
-  const token = await generateToken(obj, '1d')
-  const refresh_token = await generateToken(obj, '1w')
+  const token = await generateToken(obj, '2d')
+  const refresh_token = await generateToken(obj, '2d')
   return {
     ...infos,
     token,

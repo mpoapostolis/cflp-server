@@ -10,7 +10,7 @@ const schema = Joi.object({
   product_name: Joi.string().max(128).required(),
   description: Joi.string().max(30),
   price: Joi.number().min(0).required(),
-  images: Joi.array().items(Joi.string()),
+  images: Joi.string(),
   tags: Joi.array().items(Joi.string()),
 })
 

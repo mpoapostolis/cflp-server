@@ -10,6 +10,7 @@ const app = express()
 app.use(morgan('tiny'))
 
 app.use(express.json())
+app.use('/img/', express.static(process.env['UPLOAD_PATH']))
 
 app.use(router)
 

@@ -1,37 +1,49 @@
 import { Router, Request, Response } from 'express'
-import { validateToken } from '../../utils/token'
-import * as AWS from 'aws-sdk'
+import { uuid } from 'uuidv4'
+
 import * as multer from 'multer'
-import * as multerS3 from 'multer-s3'
-import * as crypto from 'crypto'
+import * as path from 'path'
+import * as imagemin from 'imagemin'
+import * as imageminJpegtran from 'imagemin-jpegtran'
+import imageminPngquant from 'imagemin-pngquant'
 
 require('dotenv').config()
 
-const s3 = new AWS.S3({
-  endpoint: 'fra1.digitaloceanspaces.com',
-  accessKeyId: process.env['SPACES_KEY'],
-  secretAccessKey: process.env['SPACES_SECRET'],
+const storage = multer.diskStorage({
+  destination: function (_req, _file, cb) {
+    cb(null, process.env['UPLOAD_PATH'])
+  },
+  filename: function (_req, file, cb) {
+    cb(null, uuid() + path.extname(file.originalname)) //Appending extension
+  },
 })
 
-const multerUpload = multer({
-  storage: multerS3({
-    s3: s3,
-    acl: 'public-read',
-    bucket: 'slourp-photos',
-    metadata: function (req, file, cb) {
-      cb(null, { fieldName: file.fieldname })
-    },
-    key: function (req, file, cb) {
-      const [, type] = file.mimetype.split('/')
-      cb(null, `${crypto.randomBytes(12).toString('hex')}.${type}`)
-    },
-  }),
-})
+const uploadImage = multer({ storage })
 
 const upload = Router()
-upload.post('/upload/images', validateToken, multerUpload.array('images', 3), async (req: Request, res: Response) => {
-  const files = req.files as (Express.Multer.File & { location: string })[]
-  res.status(201).json({ paths: files.map((f) => f.location) })
-})
+upload.post(
+  '/upload/images',
+  uploadImage.single('image'),
+  async (req: Request, res: Response) => {
+    ;(async () => {
+      await imagemin([req.file?.path], {
+        destination: process.env['UPLOAD_PATH'],
+        plugins: [
+          imageminJpegtran({
+            arithmetic: true,
+            progressive: true,
+          }),
+          imageminPngquant({
+            quality: [0.5, 0.5],
+          }),
+        ],
+      })
+    })()
+
+    console.log('----')
+
+    res.status(201).json({ path: req.file?.filename })
+  }
+)
 
 export default upload

@@ -39,8 +39,9 @@ read.get('/debits-credits', validateToken, async (req: Request, res) => {
   try {
     const [store] = (await pool.query(q1)).rows
     res.status(200).json(store)
-  } catch (error) {}
-  res.json({})
+  } catch (error) {
+    res.status(500).json({})
+  }
 })
 
 read.get('/:id', validateToken, async (req: Request, res: Response) => {
