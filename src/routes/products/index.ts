@@ -15,6 +15,16 @@ read.get('/', validateToken, async (req: Request, res: Response) => {
     orderBy = 'date_created',
     store_id = req.user.store_id,
   } = req.query
+
+  console.log(limit, offset)
+
+  const totalQuery = qb('products')
+    .where('product_name', 'ilike', `${searchTerm}%`)
+    .andWhere({
+      store_id,
+    })
+    .toQuery()
+
   const query = qb('products')
     .select('*')
     .where('product_name', 'ilike', `${searchTerm}%`)
@@ -27,7 +37,8 @@ read.get('/', validateToken, async (req: Request, res: Response) => {
     .toQuery()
   try {
     const data = await await pool.query(query)
-    res.status(200).json({ data: data.rows, total: data.rowCount })
+    const total = await (await pool.query(totalQuery)).rowCount
+    res.status(200).json({ data: data.rows, total })
   } catch (error) {
     res.status(500).json({ msg: error })
   }

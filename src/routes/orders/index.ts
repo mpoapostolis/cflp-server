@@ -83,7 +83,7 @@ router.post(
 
         const totalSlourps =
           req.body.reduce((acc, curr) => acc + products[curr.product_id], 0) *
-          300
+          100
 
         if (totalSlourps > user?.loyalty_points)
           return res.status(400).json({
@@ -123,31 +123,38 @@ router.get('/orders', validateToken, async (req: Request, res: Response) => {
   }
 
   if (req.query.status) whereObject['status'] = req.query.status
-  const q1 = qb('orders')
-    .select(
-      'order_id',
-      'paid_with',
-      'orders.date_created',
-      'users.user_name',
-      'status'
-    )
-    .innerJoin('users', 'user_id', 'users.id')
-    .where(whereObject)
-    .groupBy(
-      'order_id',
-      'paid_with',
-      'users.user_name',
-      'orders.date_created',
-      'status'
-    )
-    .orderBy('orders.date_created', 'desc')
+  const base = () =>
+    qb('orders')
+      .select(
+        'order_id',
+        'paid_with',
+        'orders.date_created',
+        'users.user_name',
+        'status'
+      )
+      .innerJoin('users', 'user_id', 'users.id')
+      .where(whereObject)
+      .groupBy(
+        'order_id',
+        'paid_with',
+        'users.user_name',
+        'orders.date_created',
+        'status'
+      )
+      .orderBy('orders.date_created', 'desc')
+
+  const query = base()
     .offset(Number(req.query.offset) || 0)
     .limit(Number(req.query.offset) || 10)
     .toQuery()
 
+  const totalQuery = base().toQuery()
   try {
-    const data = await pool.query(q1)
-    res.status(200).json({ total: data.rowCount, data: data.rows })
+    const data = await pool.query(query)
+    const total = await (await pool.query(totalQuery)).rowCount
+
+    console.log(total)
+    res.status(200).json({ total, data: data.rows })
   } catch (error) {
     console.log(error)
   }
@@ -235,13 +242,13 @@ router.post(
       await client.query(q2)
       const isCash = orders[0].paid_with === 'cash'
       const totalPrice = orders.reduce((acc, curr) => acc + curr.price, 0)
-      const loyalty_points = isCash ? totalPrice * 15 : -totalPrice * 300
+      const loyalty_points = isCash ? totalPrice * 10 : -totalPrice * 100
 
       await client.query(
         qb('stores')
           .increment(
             isCash ? 'debits' : 'credits',
-            isCash ? totalPrice * 0.075 : totalPrice
+            isCash ? totalPrice * 0.12 : totalPrice
           )
           .where({
             id: req.user.store_id,
