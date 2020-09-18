@@ -28,9 +28,10 @@ read.get('/client-stores', async (req: Request, res: Response) => {
   }
 })
 
-read.get('/debits-credits', validateToken, async (req: Request, res) => {
+read.get('/infos', validateToken, async (req: Request, res) => {
   const q1 = qb('stores')
-    .select('debits', 'credits')
+    .select('debits', 'credits', 'coords', 'name')
+
     .where({
       id: req.user.store_id,
     })

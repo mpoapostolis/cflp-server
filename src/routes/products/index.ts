@@ -86,6 +86,7 @@ read.get('/client-products', async (req: Request, res: Response) => {
     .select(
       'address',
       'product_name',
+      'images',
       `${tableName}.id as id`,
       'stores.id as store_id',
       'coords',

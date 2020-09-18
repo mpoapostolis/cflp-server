@@ -26,17 +26,13 @@ upload.post(
   uploadImage.single('image'),
   async (req: Request, res: Response) => {
     ;(async () => {
+      const ext = path.extname(req.file.originalname)
+      const filters = []
+      console.log(filters)
+
       await imagemin([req.file?.path], {
         destination: process.env['UPLOAD_PATH'],
-        plugins: [
-          imageminJpegtran({
-            arithmetic: true,
-            progressive: true,
-          }),
-          imageminPngquant({
-            quality: [0.5, 0.5],
-          }),
-        ],
+        plugins: filters,
       })
     })()
 
