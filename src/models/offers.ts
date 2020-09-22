@@ -1,4 +1,4 @@
-import { Coords, ItemAnalytics } from '../utils'
+import { Coords } from '../utils'
 
 export enum offerStatus {
   ONLINE = 'ONLINE',
@@ -19,6 +19,5 @@ export type Offer = {
   price: number
   lpPrice: number
   status: offerStatus
-  analytics: ItemAnalytics
   discounts: Discounts
 }
