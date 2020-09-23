@@ -58,6 +58,7 @@ router.post(
   validateToken,
   async (req: Request, res) => {
     const [{ paid_with }] = req.body
+
     try {
       if (paid_with === 'loyalty_points') {
         const q1 = qb('users')
@@ -97,7 +98,6 @@ router.post(
           req.body.map((obj) => ({
             product_id: obj.product_id,
             user_id: req.user.id,
-            quantity: obj.quantity,
             paid_with: obj.paid_with,
             store_id: req.params.id,
             order_id,
